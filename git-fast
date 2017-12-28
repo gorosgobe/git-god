@@ -13,6 +13,7 @@ ALL = "all"
 PUSH_ORIGIN = "push_origin"
 ISSUE = "issue"
 CURRENT_ISSUE = "current_issue"
+ISSUE_DELIMITER = "->"
 
 LOG_PRIORITY = 0
 ADD_PRIORITY = 1
@@ -180,7 +181,6 @@ def removeConfig(args, index)
   # if all issues are deleted then also delete the current issue symbol
   if shouldDeleteCurrentIssue then deleteLineWithKey(CURRENT_ISSUE) end
   configFile.close
-  exit(0)
 end
 
 def showStatus()
@@ -254,14 +254,21 @@ end
 def commit(args, index, flag)
   values, issues = getValues()
   logUsers = values[LOGGED]
+  issue = values[CURRENT_ISSUE]
 
   if args.length != 2 then showInvalidSizeCommit(flag) end
 
-  if not isDefined(logUsers) then
-    message = ""
-  else
-    message = logUsers + " " + args[1].to_s
+  message = ""
+
+  if isDefined(logUsers) then
+    message += logUsers
   end
+
+  if isDefined(issue) then
+    message += ISSUE_DELIMITER + issue
+  end
+
+  message += " " + args[1].to_s
 
   addAtts = values[ADD]
   if isDefined(addAtts) then
@@ -346,8 +353,6 @@ end
 
 def issue(args, index)
   if not correctIssueArgLength(args) then showIncorrectIssueArgLengthError(args.length) end
-  nameFound  = false
-  aliasFound = false
   name = ""
   aliasForName = nil
 
@@ -361,7 +366,6 @@ def issue(args, index)
     else
       values, issues = getValues()
       if arg_spl[0][1..-1] == values[CURRENT_ISSUE] then
-        puts "valuessss"
         exit(0)
       end
       # it must be an alias or name
@@ -384,7 +388,6 @@ def issue(args, index)
     writeToFile(CONFIG_FILE, "#{ISSUE}=#{name}=#{aliasForName}")
   end
 
-  exit(0)
 end
 
 def getNameFromAlias(aliasOrName)
@@ -430,33 +433,59 @@ def expectedForIssue()
   exit(128)
 end
 
+def unsupportedCommand(arg)
+  puts "Error: unexpected command \"#{arg}\" found."
+  puts "To view a full list of all arguments to git-fast, run git-fast --commands."
+end
+
+def printCommands()
+  puts ""
+  puts "List of commands in git-fast:"
+  puts ""
+  puts "git-fast -a"
+  puts "git-fast -c"
+  puts "git-fast --commands"
+  puts "git-fast -cpf"
+  puts "git-fast -i"
+  puts "git-fast -l"
+  puts "git-fast -p"
+  puts "git-fast -pf"
+  puts "git-fast -r"
+  puts "git-fast [-s|status]"
+  puts ""
+end
+
 # create configuration file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
   configFile = File.open(CONFIG_FILE, "w+")
   configFile.close
 end
 
-ARGV.each_with_index do |arg, index|
-  case arg
-  when "-l"
-    handleLog(ARGV, index)
-  when "-c"
-    commit(ARGV, index, "-c")
-  when "-p"
-    pushAtts(ARGV, index)
-  when "-pf"
-    # force push, no addition of attributes, with attributes from config file
-    push(ARGV, index)
-  when "-cpf"
-    commit(ARGV, index, "-cpf")
-    push(ARGV, index)
-  when "-r"
-    removeConfig(ARGV, index)
-  when "status", "-s"
-    showStatus()
-  when "-a"
-    alwaysAddAll()
-  when "-i"
-    issue(ARGV, index)
-  end
+arg = ARGV[0]
+index = 0
+case arg
+when "-l"
+  handleLog(ARGV, index)
+when "-c"
+  commit(ARGV, index, "-c")
+when "-p"
+  pushAtts(ARGV, index)
+when "-pf"
+  # force push, no addition of attributes, with attributes from config file
+  push(ARGV, index)
+when "-cpf"
+  commit(ARGV, index, "-cpf")
+  push(ARGV, index)
+when "-r"
+  removeConfig(ARGV, index)
+when "status", "-s"
+  showStatus()
+when "-a"
+  alwaysAddAll()
+when "-i"
+  issue(ARGV, index)
+when "--commands"
+  printCommands()
+else
+  unsupportedCommand(arg)
 end
