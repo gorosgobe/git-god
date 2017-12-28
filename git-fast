@@ -1,3 +1,79 @@
 #!/usr/bin/ruby
+require 'find'
+require 'tempfile'
 
+CONFIG_FILE = ".git-fast"
+LOGGED = "logged"
+TEMP_CONFIG = "temp.git-fast"
 
+def log(args, index, file)
+  # find the previous logged info
+  logUsers = ""
+
+  args[index + 1..-1].each do |arg|
+    puts "Logged: #{arg}"
+    logUsers += "[" + arg +"]"
+  end
+
+  tmp_file = Tempfile.new(TEMP_CONFIG)
+  hasBeenLogged = false
+  begin
+    file.each_line do |line|
+      if line.split("=")[0] == LOGGED then
+      # overwrite
+      hasBeenLogged = true
+      tmp_file.write("#{LOGGED}=#{logUsers}")
+    else
+      tmp_file.write(line)
+    end
+  end
+
+  # no log line exists
+  if not hasBeenLogged then
+    tmp_file.write("#{LOGGED}=#{logUsers}")
+  end
+  tmp_file.close
+  # change the name and overwrite
+  FileUtils.mv(tmp_file, file)
+ensure
+  tmp_file.close
+  tmp_file.unlink
+end
+end
+
+def isConfigFile(name)
+  File.basename(name) == CONFIG_FILE
+end
+
+def existsConfigFile()
+Find.find(Dir.pwd) do |e|
+  next if File.directory?(e)
+  if isConfigFile(e) then return true end
+end
+false
+end
+
+def removeConfig()
+  if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
+end
+
+configFile = nil
+# create configuration and template storing file if it doesnt exist
+if not File.exist?(CONFIG_FILE) then
+  configFile = File.open(CONFIG_FILE, "w+")
+else
+  configFile = File.open(CONFIG_FILE, "r+")
+end
+
+ARGV.each_with_index do |arg, index|
+  case arg
+  when "-l"
+    log(ARGV, index, configFile)
+  when "-c"
+    commit(ARGV, index, configFile)
+  when "-r"
+    removeConfig()
+  end
+end
+
+configFile.close
