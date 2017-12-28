@@ -44,9 +44,9 @@ Adds issue name to commit messages.
 ```
 git-fast -l gorosgobe
 git-fast -i --name="bugFix3" --alias=b3
-git-fast -c "commit message"     # results in commit: [gorosgobe]@bugFix3 commit message
-git-fast -i -@
+git-fast -c "commit message"     # results in commit: [gorosgobe]->bugFix3 commit message
+git-fast -i                      # sets current issue to be none
 git-fast -c "commit message"     # results in commit: [gorosgobe] commit message
 git-fast -i -b3
-git-fast -c "commit message 2"   # results in commit: [gorosgobe]@bugFix3 commit message 2
+git-fast -c "commit message 2"   # results in commit: [gorosgobe]->bugFix3 commit message 2
 ```
