@@ -1,6 +1,6 @@
 # git-fast
 
-A script to allow for more useful git commit messages.
+A script that allows to save configurations for easier, more meaningful and faster comitting.
 
 # Features
 ```
