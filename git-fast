@@ -6,14 +6,63 @@ CONFIG_FILE = ".git-fast"
 TEMP_CONFIG = "temp.git-fast"
 LOGGED = "logged"
 LOG_PRIORITY = 0
+DEFAULT_START_LOG = "["
+DEFAULT_END_LOG = "]"
 
-def log(args, index, file)
+def handleLog(args, index, file)
+  defaultDelimiter = true
+  start_del = DEFAULT_START_LOG
+  end_del = DEFAULT_END_LOG
+  args.each_with_index do |arg, i|
+    arg_spl = arg.split("=")
+    case arg_spl[0]
+    when "--del"
+
+      if arg_spl.length == 1 then
+        showDelimiterNotIncludedError()
+        return
+      end
+
+      # only one character provided, use for both
+      puts arg.inspect
+      if arg_spl[1].length == 1 then
+        log(args, i, file, arg_spl[1][0], arg_spl[1][0])
+        return
+      elsif arg_spl[1].length == 2 then
+        log(args, i, file, arg_spl[1][0], arg_spl[1][1])
+        return
+      else
+        showInvalidDelimiterError()
+        return
+      end
+    end
+  end
+
+  log(args, index, file, start_del, end_del)
+end
+
+def showDelimiterNotIncludedError()
+  puts "Error: delimiter is empty or it is invalid."
+  toAddDelimiterTut()
+end
+
+def showInvalidDelimiterError()
+  puts "Error: invalid delimiter supplied for log."
+  toAddDelimiterTut()
+end
+
+def toAddDelimiterTut()
+  puts "To add a delimiter, add flag --del=\"<delimiter>\". Note the double quotes."
+  puts "<delimiter> must be one or two characters."
+end
+
+def log(args, index, file, start_del, end_del)
   # find the previous logged info
   logUsers = ""
 
   args[index + 1..-1].each do |arg|
     puts "Logged: #{arg}"
-    logUsers += "[" + arg +"]"
+    logUsers += start_del + arg + end_del
   end
 
   tmp_file = Tempfile.new(TEMP_CONFIG)
@@ -88,12 +137,12 @@ end
 ARGV.each_with_index do |arg, index|
   case arg
   when "-l"
-    log(ARGV, index, configFile)
+    handleLog(ARGV, index, configFile)
   when "-c"
     commit(ARGV, index, configFile)
   when "-r"
     removeConfig()
-  when "status"
+  when "status", "-s"
     showStatus(configFile)
   end
 end
