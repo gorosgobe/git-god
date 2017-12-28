@@ -11,6 +11,8 @@ DEFAULT_END_LOG = "]"
 ADD = "add"
 ADD_PRIORITY = 1
 ALL = "all"
+PUSH_ORIGIN = "push_origin"
+PUSH_ORIGIN_PRIORITY = 2
 
 def handleLog(args, index, file)
   defaultDelimiter = true
@@ -97,16 +99,15 @@ def writeToFileOrOverwrite(file, flag, newValue)
       if line.split("=")[0] == flag then
       # overwrite
       hasBeenWritten = true
-      tmp_file.write(newValue)
+      tmp_file.puts(newValue)
     else
-      tmp_file.write(line)
+      tmp_file.puts(line)
     end
   end
 
   # no line exists
   if not hasBeenWritten then
-    tmp_file.write("\n")
-    tmp_file.write(newValue)
+    tmp_file.puts(newValue)
   end
   tmp_file.close
   # change the name and overwrite
@@ -117,6 +118,22 @@ ensure
 end
 end
 
+def deleteLineWithKey(file, key)
+  tmp_file = Tempfile.new(TEMP_CONFIG)
+  begin
+    file.each_line do |line|
+      next if line.split("=")[0] == key
+      tmp_file.puts(line)
+    end
+  tmp_file.close
+  # change the name and overwrite
+  FileUtils.mv(tmp_file, file)
+  ensure
+  tmp_file.close
+  tmp_file.unlink
+  end
+end
+
 def existsConfigFile()
 Find.find(Dir.pwd) do |e|
   next if File.directory?(e)
@@ -125,8 +142,18 @@ end
 false
 end
 
-def removeConfig()
+def removeConfig(args, index, configFile)
+  if args.length == 1 then
+    # flag is only -r, delete whole configuration
   if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
+  else
+    # delete specific attributes
+    args[index + 1..-1].each do |flag|
+      key = getKeyFromFlag(flag)
+      puts key
+      deleteLineWithKey(configFile, key)
+    end
+  end
 end
 
 def showStatus(configFile)
@@ -138,6 +165,8 @@ def showStatus(configFile)
       info[LOG_PRIORITY] = line_array[1..-1]
     when ADD
       info[ADD_PRIORITY] = line_array[1..-1]
+    when PUSH_ORIGIN
+      info[PUSH_ORIGIN_PRIORITY] = line_array[1..-1]
     end
   end
 
@@ -148,6 +177,8 @@ def showStatus(configFile)
       puts "logged: #{v[0]}"
     when ADD_PRIORITY
       if v[0].length != 0 then puts "add " + ALL end
+    when PUSH_ORIGIN_PRIORITY
+      puts "pushing to: #{v[0]}"
     end
   end
 end
@@ -164,8 +195,15 @@ end
 def commit(args, index, configFile)
   values = getValues(configFile)
   logUsers = values[LOGGED]
-  message = logUsers + " " + args[1].to_s
-  if addIsDefined(values) then
+
+  if not isDefined(logUsers) then
+    message = ""
+  else
+    message = logUsers + " " + args[1].to_s
+  end
+
+  addAtts = values[ADD]
+  if isDefined(addAtts) then
     puts "adding all"
     # puts `git add -A`
   end
@@ -173,12 +211,66 @@ def commit(args, index, configFile)
   # puts `git commit -m \"#{message}\"`
 end
 
-def addIsDefined(values)
-  values[ADD] != nil
+
+def push(args, index, configFile)
+  values = getValues(configFile)
+  pushAtts = values[PUSH_ORIGIN]
+  if not isDefined(pushAtts) then
+    puts "pushing normal"
+  else
+    puts "pushing origin #{branch}"
+    # puts `git push origin #{branch}`
+  end
+end
+
+def pushAtts(args, index, configFile)
+  if args.length == 1 then
+    showPushAttsWithNoAttsError()
+    return
+  end
+
+  args[1..-1].each do |value|
+    value_spl = value.split("=")
+    if value_spl.length == 1 then showPushAttsWithNoAttsError end
+    case value_spl[0]
+    when "--o"
+      writeToFileOrOverwrite(configFile, PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+    end
+  end
+end
+
+def showPushAttsWithNoAttsError()
+  puts "Error: trying to add a configuration for push but no attributes are found."
+  puts "To add a configuration for push, do use \"git-fast -p --o=<branch-name>\"."
+  puts "This is the equivalent of git push origin branch-name."
+end
+
+def isDefined(val)
+  val != nil
 end
 
 def alwaysAddAll(configFile)
   writeToFileOrOverwrite(configFile, ADD, "#{ADD}=#{ALL}")
+end
+
+def getKeyFromFlag(flag)
+  if not isConfigurable(flag) then
+    puts "Error: configuration for #{flag} cannot be removed."
+    puts "The flag #{flag} is non configurable or does not exist."
+    exit(128)
+  end
+  case flag
+  when "-l"
+    LOGGED
+  when "-p"
+    PUSH_ORIGIN
+  when "-a"
+    ADD
+  end
+end
+
+def isConfigurable(flag)
+  flag == "-l" or flag == "-p" or flag == "-a"
 end
 
 configFile = nil
@@ -195,8 +287,14 @@ ARGV.each_with_index do |arg, index|
     handleLog(ARGV, index, configFile)
   when "-c"
     commit(ARGV, index, configFile)
+  when "-p"
+    pushAtts(ARGV, index, configFile)
+  when "-pf"
+    # force push and not attributes, with attributes from file such as origin
+    push(ARGV, index, configFile)
   when "-r"
-    removeConfig()
+    removeConfig(ARGV, index, configFile)
+    exit(0)
   when "status", "-s"
     showStatus(configFile)
   when "-a"
