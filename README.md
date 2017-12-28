@@ -11,6 +11,11 @@ git-fast -c "message"  # adds message to configuration
 Shows the current message/template to commit
 ```
 git-fast status
+git-fast -s
+```
+Specified that git should always add all files
+```
+git-fast -a
 ```
 Acts as a logging feature. All commits are preceded by the arguments supplied after the flag in square brackets. 
 ```
