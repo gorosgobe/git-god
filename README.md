@@ -32,3 +32,11 @@ Removes the configuration file. Alternatively, it can remove any previously conf
 git-fast -r # deletes the entire configuration
 git-fast -r -l -p # deletes configurations of -l and -p flags
 ```
+Adds the origin attribute to the push command.
+```
+git-fast -p --o=master    # sets up the configuration
+git-fast -pf              # git push origin master
+git-fast -p --o=my-branch
+git-fast -pf              # git push origin my-branch
+
+```
