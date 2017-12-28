@@ -1,20 +1,25 @@
 #!/usr/bin/ruby
 require 'find'
 require 'tempfile'
+require 'set'
 
 CONFIG_FILE = ".git-fast"
 TEMP_CONFIG = "temp.git-fast"
 LOGGED = "logged"
-LOG_PRIORITY = 0
 DEFAULT_START_LOG = "["
 DEFAULT_END_LOG = "]"
 ADD = "add"
-ADD_PRIORITY = 1
 ALL = "all"
 PUSH_ORIGIN = "push_origin"
-PUSH_ORIGIN_PRIORITY = 2
+ISSUE = "issue"
+CURRENT_ISSUE = "current_issue"
 
-def handleLog(args, index, file)
+LOG_PRIORITY = 0
+ADD_PRIORITY = 1
+PUSH_ORIGIN_PRIORITY = 2
+CURRENT_PRIORITY = 3
+
+def handleLog(args, index)
   defaultDelimiter = true
   start_del = DEFAULT_START_LOG
   end_del = DEFAULT_END_LOG
@@ -38,10 +43,10 @@ def handleLog(args, index, file)
 
       # only one character provided, use for both
       if arg_spl[1].length == 1 then
-        log(args, i, file, arg_spl[1][0], arg_spl[1][0])
+        log(args, i, arg_spl[1][0], arg_spl[1][0])
         return
       elsif arg_spl[1].length == 2 then
-        log(args, i, file, arg_spl[1][0], arg_spl[1][1])
+        log(args, i, arg_spl[1][0], arg_spl[1][1])
         return
       else
         showInvalidDelimiterError()
@@ -49,7 +54,7 @@ def handleLog(args, index, file)
     end
   end
 
-  log(args, index, file, start_del, end_del)
+  log(args, index, start_del, end_del)
 end
 
 def showNoLogIncludedError()
@@ -73,24 +78,27 @@ def toAddDelimiterTut()
   exit(128)
 end
 
-def log(args, index, file, start_del, end_del)
+def log(args, index, start_del, end_del)
   # find the previous logged info
   logUsers = ""
+  file = openConfigFile()
 
   args[index + 1..-1].each do |arg|
     puts "Logged: #{arg}"
     logUsers += start_del + arg + end_del
   end
 
-  writeToFileOrOverwrite(file, LOGGED, "#{LOGGED}=#{logUsers}")
+  writeToFileOrOverwrite(LOGGED, "#{LOGGED}=#{logUsers}")
+  file.close
 end
 
 def isConfigFile(name)
   File.basename(name) == CONFIG_FILE
 end
 
-def writeToFileOrOverwrite(file, flag, newValue)
+def writeToFileOrOverwrite(flag, newValue)
   tmp_file = Tempfile.new(TEMP_CONFIG)
+  file = openConfigFile()
   hasBeenWritten = false
   begin
     file.each_line do |line|
@@ -98,10 +106,10 @@ def writeToFileOrOverwrite(file, flag, newValue)
       # overwrite
       hasBeenWritten = true
       tmp_file.puts(newValue)
-    else
+      else
       tmp_file.puts(line)
+      end
     end
-  end
 
   # no line exists
   if not hasBeenWritten then
@@ -110,14 +118,24 @@ def writeToFileOrOverwrite(file, flag, newValue)
   tmp_file.close
   # change the name and overwrite
   FileUtils.mv(tmp_file, file)
+  file.close
 ensure
   tmp_file.close
   tmp_file.unlink
+  file.close
 end
 end
 
-def deleteLineWithKey(file, key)
+def writeToFile(file_name, value)
+  #assumes file is not opened
+  file = File.open(file_name, "a")
+  file.puts(value)
+  file.close
+end
+
+def deleteLineWithKey(key)
   tmp_file = Tempfile.new(TEMP_CONFIG)
+  file = openConfigFile()
   begin
     file.each_line do |line|
       next if line.split("=")[0] == key
@@ -130,6 +148,7 @@ def deleteLineWithKey(file, key)
   ensure
   tmp_file.close
   tmp_file.unlink
+  file.close
   end
 end
 
@@ -141,7 +160,9 @@ end
 false
 end
 
-def removeConfig(args, index, configFile)
+def removeConfig(args, index)
+  configFile = openConfigFile()
+  shouldDeleteCurrentIssue = false
   if args.length == 1 then
     # flag is only -r, delete whole configuration
   if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
@@ -149,14 +170,23 @@ def removeConfig(args, index, configFile)
     # delete specific attributes
     args[index + 1..-1].each do |flag|
       key = getKeyFromFlag(flag)
-      file = deleteLineWithKey(configFile, key)
+      # would delete all issues in case key is issue
+      if key == ISSUE then shouldDeleteCurrentIssue = true end
+      file = deleteLineWithKey(key)
       configFile = file
     end
   end
+
+  # if all issues are deleted then also delete the current issue symbol
+  if shouldDeleteCurrentIssue then deleteLineWithKey(CURRENT_ISSUE) end
+  configFile.close
+  exit(0)
 end
 
-def showStatus(configFile)
+def showStatus()
   info = Hash.new
+  issues = Set.new
+  configFile = openConfigFile()
   configFile.each_line do |line|
     line_array = line.split("=")
     case line_array[0]
@@ -166,8 +196,14 @@ def showStatus(configFile)
       info[ADD_PRIORITY] = line_array[1..-1]
     when PUSH_ORIGIN
       info[PUSH_ORIGIN_PRIORITY] = line_array[1..-1]
+    when ISSUE
+      issues << line_array[1..-1]
+    when CURRENT_ISSUE
+      info[CURRENT_PRIORITY] = line_array[1..-1]
     end
   end
+
+  configFile.close
 
   info = Hash[info.sort]
   info.each do |k, v|
@@ -175,25 +211,51 @@ def showStatus(configFile)
     when LOG_PRIORITY
       puts "logged: #{v[0]}"
     when ADD_PRIORITY
-      if v[0].length != 0 then puts "add " + ALL end
+      if v[0].length != 0 then puts "add: " + ALL end
     when PUSH_ORIGIN_PRIORITY
       puts "pushing to: #{v[0]}"
+    when CURRENT_PRIORITY
+      puts "current issue: #{v[0]}"
     end
   end
-end
 
-def getValues(configFile)
-  info = Hash.new
-  configFile.each_line do |line|
-    line_array = line.split("=")
-    info[line_array[0]] = line_array[1]
+  issues.each do |issue_line|
+    if issue_line.length == 1 then
+      puts "issue: #{issue_line[0]}"
+    else
+      puts "issue: #{issue_line[0]}, alias: #{issue_line[1]}"
+    end
   end
-  info
+
 end
 
-def commit(args, index, configFile)
-  values = getValues(configFile)
+def getValues()
+  info = Hash.new
+  issues = Set.new
+  configFile = openConfigFile()
+  configFile.each_line do |line|
+    line_array = line.strip.split("=")
+    if line_array[0] == ISSUE then
+      # case when it is an issue, need to track name and alias
+      aliasForName = ""
+      if line_array[2] != nil then aliasForName = line_array[2] end
+      issues << line_array[1] + "=" + aliasForName
+    else
+    info[line_array[0]] = line_array[1]
+    end
+  end
+  return info, issues
+end
+
+def openConfigFile()
+  File.open(CONFIG_FILE, "r+")
+end
+
+def commit(args, index, flag)
+  values, issues = getValues()
   logUsers = values[LOGGED]
+
+  if args.length != 2 then showInvalidSizeCommit(flag) end
 
   if not isDefined(logUsers) then
     message = ""
@@ -207,23 +269,24 @@ def commit(args, index, configFile)
     # puts `git add -A`
   end
   puts "commiting..."
+  puts "#{message}"
   # puts `git commit -m \"#{message}\"`
 end
 
 
-def push(args, index, configFile)
-  values = getValues(configFile)
+def push(args, index)
+  values, issues = getValues()
   pushAtts = values[PUSH_ORIGIN]
   if not isDefined(pushAtts) then
     puts "pushing normal"
     # puts `git push`
   else
-    puts "pushing origin #{branch}"
+    puts "pushing origin #{pushAtts}"
     # puts `git push origin #{branch}`
   end
 end
 
-def pushAtts(args, index, configFile)
+def pushAtts(args, index)
   if args.length == 1 then
     showPushAttsWithNoAttsError()
   end
@@ -233,14 +296,20 @@ def pushAtts(args, index, configFile)
     if value_spl.length == 1 then showPushAttsWithNoAttsError end
     case value_spl[0]
     when "--o"
-      writeToFileOrOverwrite(configFile, PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+      writeToFileOrOverwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
     end
   end
 end
 
+def showInvalidSizeCommit(callingFlag)
+  puts "Error: trying to commit but incorrect number of arguments supplied."
+  puts "Expected: git-fast #{callingFlag} \"<some message>\""
+  exit(128)
+end
+
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
-  puts "To add a configuration for push, do use \"git-fast -p --o=<branch-name>\"."
+  puts "To add a configuration for push, use \"git-fast -p --o=<branch-name>\"."
   puts "This is the equivalent of \"git push origin branch-name\"."
   exit(128)
 end
@@ -249,8 +318,8 @@ def isDefined(val)
   val != nil
 end
 
-def alwaysAddAll(configFile)
-  writeToFileOrOverwrite(configFile, ADD, "#{ADD}=#{ALL}")
+def alwaysAddAll()
+  writeToFileOrOverwrite(ADD, "#{ADD}=#{ALL}")
 end
 
 def getKeyFromFlag(flag)
@@ -266,43 +335,128 @@ def getKeyFromFlag(flag)
     PUSH_ORIGIN
   when "-a"
     ADD
+  when "-i"
+    ISSUE
   end
 end
 
 def isConfigurable(flag)
-  flag == "-l" or flag == "-p" or flag == "-a"
+  flag == "-l" or flag == "-p" or flag == "-a" or flag == "-i"
 end
 
-configFile = nil
+def issue(args, index)
+  if not correctIssueArgLength(args) then showIncorrectIssueArgLengthError(args.length) end
+  nameFound  = false
+  aliasFound = false
+  name = ""
+  aliasForName = nil
+
+  args[index + 1..-1].each do |arg|
+    arg_spl = arg.split("=")
+    case arg_spl[0]
+    when "--name"
+      name = arg_spl[1]
+    when "--alias"
+      aliasForName = arg_spl[1]
+    else
+      values, issues = getValues()
+      if arg_spl[0][1..-1] == values[CURRENT_ISSUE] then
+        puts "valuessss"
+        exit(0)
+      end
+      # it must be an alias or name
+      name = getNameFromAlias(arg_spl[0][1..-1].strip)
+      if name == nil then showErrorIssueDoesNotExist(arg_spl[0][1..-1]) end
+      writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+      puts "Current issue: #{name}"
+      exit(0) # job is done, no need to add any issues
+    end
+  end
+
+  if name == nil then showNoNameForIssueError end
+
+  # writeToFile leaves configFile closed
+  if aliasForName == nil then
+    writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+    writeToFile(CONFIG_FILE, "#{ISSUE}=#{name}")
+  else
+    writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{aliasForName}")
+    writeToFile(CONFIG_FILE, "#{ISSUE}=#{name}=#{aliasForName}")
+  end
+
+  exit(0)
+end
+
+def getNameFromAlias(aliasOrName)
+  configFile = openConfigFile()
+  begin
+    configFile.each_line do |line|
+      line_spl = line.strip.split("=")
+      next if line_spl[0] != ISSUE
+      # line is an issue
+      if aliasOrName == line_spl[1] or aliasOrName == line_spl[2] then
+        return line_spl[1]
+      end
+    end
+    # if not found return nil
+    nil
+  ensure
+    configFile.close
+  end
+end
+
+def showErrorIssueDoesNotExist(name)
+  puts "Error: issue with name #{name} or alias #{name} does not exist."
+  expectedForIssue()
+end
+
+def correctIssueArgLength(args)
+  args.length == 2 or args.length == 3
+end
+
+def showNoNameForIssueError()
+  puts "Error: no name was supplied for a new issue."
+  expectedForIssue()
+end
+
+def showIncorrectIssueArgLengthError(len)
+  puts "Error: Creating a new issue expects a name and an optional alias."
+  expectedForIssue()
+end
+
+def expectedForIssue()
+  puts "Expected: \"git-fast -i --name=<issue-name>\" or \"git-fast -i --name=<issue-name> --alias=<alias>\"."
+  puts "To set the current issue, use \"git-fast -i -<alias or name of issue>\"."
+  exit(128)
+end
+
 # create configuration file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
   configFile = File.open(CONFIG_FILE, "w+")
-else
-  configFile = File.open(CONFIG_FILE, "r+")
+  configFile.close
 end
 
 ARGV.each_with_index do |arg, index|
   case arg
   when "-l"
-    handleLog(ARGV, index, configFile)
+    handleLog(ARGV, index)
   when "-c"
-    commit(ARGV, index, configFile)
+    commit(ARGV, index, "-c")
   when "-p"
-    pushAtts(ARGV, index, configFile)
+    pushAtts(ARGV, index)
   when "-pf"
     # force push, no addition of attributes, with attributes from config file
-    push(ARGV, index, configFile)
+    push(ARGV, index)
   when "-cpf"
-    commit(ARGV, index, configFile)
-    push(ARGV, index, configFile)
+    commit(ARGV, index, "-cpf")
+    push(ARGV, index)
   when "-r"
-    removeConfig(ARGV, index, configFile)
-    exit(0)
+    removeConfig(ARGV, index)
   when "status", "-s"
-    showStatus(configFile)
+    showStatus()
   when "-a"
-    alwaysAddAll(configFile)
+    alwaysAddAll()
+  when "-i"
+    issue(ARGV, index)
   end
 end
-
-configFile.close
