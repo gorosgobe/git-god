@@ -24,7 +24,6 @@ def handleLog(args, index, file)
       end
 
       # only one character provided, use for both
-      puts arg.inspect
       if arg_spl[1].length == 1 then
         log(args, i, file, arg_spl[1][0], arg_spl[1][0])
         return
@@ -126,8 +125,24 @@ def showStatus(configFile)
   end
 end
 
+def getValues(configFile)
+  info = Hash.new
+  configFile.each_line do |line|
+    line_array = line.split("=")
+    info[line_array[0]] = line_array[1]
+  end
+  info
+end
+
+def commit(args, index, configFile)
+  values = getValues(configFile)
+  logUsers = values[LOGGED]
+  message = logUsers + " " + args[1].to_s
+  puts `git commit -m \"#{message}\"`
+end
+
 configFile = nil
-# create configuration and template storing file if it doesnt exist
+# create configuration file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
   configFile = File.open(CONFIG_FILE, "w+")
 else
