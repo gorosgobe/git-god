@@ -8,15 +8,29 @@ LOGGED = "logged"
 LOG_PRIORITY = 0
 DEFAULT_START_LOG = "["
 DEFAULT_END_LOG = "]"
+ADD = "add"
+ADD_PRIORITY = 1
+ALL = "all"
 
 def handleLog(args, index, file)
   defaultDelimiter = true
   start_del = DEFAULT_START_LOG
   end_del = DEFAULT_END_LOG
+
+  if args.length == 1 then
+    showNoLogIncludedError()
+    return
+  end
+
   args.each_with_index do |arg, i|
     arg_spl = arg.split("=")
     case arg_spl[0]
     when "--del"
+
+      if args.length == 2 then
+        showNoLogIncludedError()
+        return
+      end
 
       if arg_spl.length == 1 then
         showDelimiterNotIncludedError()
@@ -38,6 +52,10 @@ def handleLog(args, index, file)
   end
 
   log(args, index, file, start_del, end_del)
+end
+
+def showNoLogIncludedError()
+  puts "Error: no logs have been included."
 end
 
 def showDelimiterNotIncludedError()
@@ -64,22 +82,31 @@ def log(args, index, file, start_del, end_del)
     logUsers += start_del + arg + end_del
   end
 
+  writeToFileOrOverwrite(file, LOGGED, "#{LOGGED}=#{logUsers}")
+end
+
+def isConfigFile(name)
+  File.basename(name) == CONFIG_FILE
+end
+
+def writeToFileOrOverwrite(file, flag, newValue)
   tmp_file = Tempfile.new(TEMP_CONFIG)
-  hasBeenLogged = false
+  hasBeenWritten = false
   begin
     file.each_line do |line|
-      if line.split("=")[0] == LOGGED then
+      if line.split("=")[0] == flag then
       # overwrite
-      hasBeenLogged = true
-      tmp_file.write("#{LOGGED}=#{logUsers}")
+      hasBeenWritten = true
+      tmp_file.write(newValue)
     else
       tmp_file.write(line)
     end
   end
 
-  # no log line exists
-  if not hasBeenLogged then
-    tmp_file.write("#{LOGGED}=#{logUsers}")
+  # no line exists
+  if not hasBeenWritten then
+    tmp_file.write("\n")
+    tmp_file.write(newValue)
   end
   tmp_file.close
   # change the name and overwrite
@@ -88,10 +115,6 @@ ensure
   tmp_file.close
   tmp_file.unlink
 end
-end
-
-def isConfigFile(name)
-  File.basename(name) == CONFIG_FILE
 end
 
 def existsConfigFile()
@@ -113,14 +136,18 @@ def showStatus(configFile)
     case line_array[0]
     when LOGGED
       info[LOG_PRIORITY] = line_array[1..-1]
+    when ADD
+      info[ADD_PRIORITY] = line_array[1..-1]
     end
   end
 
-  info.sort{ |k, v| k }.to_h
+  info = Hash[info.sort]
   info.each do |k, v|
     case k
     when LOG_PRIORITY
       puts "logged: #{v[0]}"
+    when ADD_PRIORITY
+      if v[0].length != 0 then puts "add " + ALL end
     end
   end
 end
@@ -138,7 +165,20 @@ def commit(args, index, configFile)
   values = getValues(configFile)
   logUsers = values[LOGGED]
   message = logUsers + " " + args[1].to_s
-  puts `git commit -m \"#{message}\"`
+  if addIsDefined(values) then
+    puts "adding all"
+    # puts `git add -A`
+  end
+  puts "commiting..."
+  # puts `git commit -m \"#{message}\"`
+end
+
+def addIsDefined(values)
+  values[ADD] != nil
+end
+
+def alwaysAddAll(configFile)
+  writeToFileOrOverwrite(configFile, ADD, "#{ADD}=#{ALL}")
 end
 
 configFile = nil
@@ -159,6 +199,8 @@ ARGV.each_with_index do |arg, index|
     removeConfig()
   when "status", "-s"
     showStatus(configFile)
+  when "-a"
+    alwaysAddAll(configFile)
   end
 end
 
