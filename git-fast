@@ -219,6 +219,9 @@ def showStatus()
     end
   end
 
+  # if there is no current issue because it has been restored or never assigned
+  if info[CURRENT_PRIORITY] == nil then puts "no current issues" end
+
   issues.each do |issue_line|
     if issue_line.length == 1 then
       puts "issue: #{issue_line[0]}"
@@ -353,6 +356,11 @@ end
 
 def issue(args, index)
   if not correctIssueArgLength(args) then showIncorrectIssueArgLengthError(args.length) end
+  # if length is one, then we want to commit without issue
+  if args.length == 1 then
+    deleteLineWithKey(CURRENT_ISSUE)
+    exit(0)
+  end
   name = ""
   aliasForName = nil
 
@@ -414,7 +422,7 @@ def showErrorIssueDoesNotExist(name)
 end
 
 def correctIssueArgLength(args)
-  args.length == 2 or args.length == 3
+  args.length >= 1 and args.length <= 3
 end
 
 def showNoNameForIssueError()
