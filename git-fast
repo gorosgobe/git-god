@@ -3,8 +3,9 @@ require 'find'
 require 'tempfile'
 
 CONFIG_FILE = ".git-fast"
-LOGGED = "logged"
 TEMP_CONFIG = "temp.git-fast"
+LOGGED = "logged"
+LOG_PRIORITY = 0
 
 def log(args, index, file)
   # find the previous logged info
@@ -57,6 +58,25 @@ def removeConfig()
   if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
 end
 
+def showStatus(configFile)
+  info = Hash.new
+  configFile.each_line do |line|
+    line_array = line.split("=")
+    case line_array[0]
+    when LOGGED
+      info[LOG_PRIORITY] = line_array[1..-1]
+    end
+  end
+
+  info.sort{ |k, v| k }.to_h
+  info.each do |k, v|
+    case k
+    when LOG_PRIORITY
+      puts "logged: #{v[0]}"
+    end
+  end
+end
+
 configFile = nil
 # create configuration and template storing file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
@@ -73,6 +93,8 @@ ARGV.each_with_index do |arg, index|
     commit(ARGV, index, configFile)
   when "-r"
     removeConfig()
+  when "status"
+    showStatus(configFile)
   end
 end
 
