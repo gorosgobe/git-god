@@ -21,7 +21,6 @@ def handleLog(args, index, file)
 
   if args.length == 1 then
     showNoLogIncludedError()
-    return
   end
 
   args.each_with_index do |arg, i|
@@ -31,12 +30,10 @@ def handleLog(args, index, file)
 
       if args.length == 2 then
         showNoLogIncludedError()
-        return
       end
 
       if arg_spl.length == 1 then
         showDelimiterNotIncludedError()
-        return
       end
 
       # only one character provided, use for both
@@ -48,7 +45,6 @@ def handleLog(args, index, file)
         return
       else
         showInvalidDelimiterError()
-        return
       end
     end
   end
@@ -58,6 +54,7 @@ end
 
 def showNoLogIncludedError()
   puts "Error: no logs have been included."
+  exit(128)
 end
 
 def showDelimiterNotIncludedError()
@@ -73,6 +70,7 @@ end
 def toAddDelimiterTut()
   puts "To add a delimiter, add flag --del=\"<delimiter>\". Note the double quotes."
   puts "<delimiter> must be one or two characters."
+  exit(128)
 end
 
 def log(args, index, file, start_del, end_del)
@@ -128,6 +126,7 @@ def deleteLineWithKey(file, key)
   tmp_file.close
   # change the name and overwrite
   FileUtils.mv(tmp_file, file)
+  file
   ensure
   tmp_file.close
   tmp_file.unlink
@@ -150,8 +149,8 @@ def removeConfig(args, index, configFile)
     # delete specific attributes
     args[index + 1..-1].each do |flag|
       key = getKeyFromFlag(flag)
-      puts key
-      deleteLineWithKey(configFile, key)
+      file = deleteLineWithKey(configFile, key)
+      configFile = file
     end
   end
 end
@@ -217,6 +216,7 @@ def push(args, index, configFile)
   pushAtts = values[PUSH_ORIGIN]
   if not isDefined(pushAtts) then
     puts "pushing normal"
+    # puts `git push`
   else
     puts "pushing origin #{branch}"
     # puts `git push origin #{branch}`
@@ -226,7 +226,6 @@ end
 def pushAtts(args, index, configFile)
   if args.length == 1 then
     showPushAttsWithNoAttsError()
-    return
   end
 
   args[1..-1].each do |value|
@@ -242,7 +241,8 @@ end
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
   puts "To add a configuration for push, do use \"git-fast -p --o=<branch-name>\"."
-  puts "This is the equivalent of git push origin branch-name."
+  puts "This is the equivalent of \"git push origin branch-name\"."
+  exit(128)
 end
 
 def isDefined(val)
@@ -290,7 +290,10 @@ ARGV.each_with_index do |arg, index|
   when "-p"
     pushAtts(ARGV, index, configFile)
   when "-pf"
-    # force push and not attributes, with attributes from file such as origin
+    # force push, no addition of attributes, with attributes from config file
+    push(ARGV, index, configFile)
+  when "-cpf"
+    commit(ARGV, index, configFile)
     push(ARGV, index, configFile)
   when "-r"
     removeConfig(ARGV, index, configFile)
