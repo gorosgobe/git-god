@@ -13,7 +13,7 @@ Shows the current message/template to commit
 git-fast status
 git-fast -s
 ```
-Specified that git should always add all files
+Specifies that git should always add all files
 ```
 git-fast -a
 ```
@@ -26,4 +26,9 @@ Delimiters can also be specified directly.
 ```
 git-fast -l gorosgobe --del="|" billgates
 git-fast -c "new commit" # commits: "|gorosgobe||billgates| new commit"
+```
+Removes the configuration file. Alternatively, it can remove any previously configured flags, such as -l or -p
+```
+git-fast -r # deletes the entire configuration
+git-fast -r -l -p # deletes configurations of -l and -p flags
 ```
