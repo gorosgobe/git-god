@@ -3,10 +3,11 @@
 A script that allows to save configurations for easier, more meaningful and faster comitting.
 
 # Features
+Commit the current message and push.
 ```
-Commits with the current message
 git-fast -c            # extracts message from configuration 
 git-fast -c "message"  # adds message to configuration
+git-fast -pf
 ```
 Shows the current message/template to commit
 ```
@@ -31,4 +32,21 @@ Removes the configuration file. Alternatively, it can remove any previously conf
 ```
 git-fast -r # deletes the entire configuration
 git-fast -r -l -p # deletes configurations of -l and -p flags
+```
+Adds the origin attribute to the push command.
+```
+git-fast -p --o=master    # sets up the configuration
+git-fast -pf              # git push origin master
+git-fast -p --o=my-branch
+git-fast -pf              # git push origin my-branch
+```
+Adds issue name to commit messages.
+```
+git-fast -l gorosgobe
+git-fast -i --name="bugFix3" --alias=b3
+git-fast -c "commit message"     # results in commit: [gorosgobe]@bugFix3 commit message
+git-fast -i -@
+git-fast -c "commit message"     # results in commit: [gorosgobe] commit message
+git-fast -i -b3
+git-fast -c "commit message 2"   # results in commit: [gorosgobe]@bugFix3 commit message 2
 ```
