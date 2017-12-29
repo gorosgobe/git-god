@@ -13,10 +13,11 @@ ALL = "all"
 PUSH_ORIGIN = "push_origin"
 ISSUE = "issue"
 CURRENT_ISSUE = "current_issue"
-ISSUE_DELIMITER = "->"
+ISSUE_DELIMITER = "#"
 CLOSES = "Closes"
 CONTRIBUTORS = "Contributors:"
 MENTION = "@"
+ISSUE_MENTION = "#"
 
 LOG_PRIORITY = 0
 ADD_PRIORITY = 1
@@ -257,14 +258,30 @@ def openConfigFile()
   File.open(CONFIG_FILE, "r+")
 end
 
-def commit(args, index, flag)
+def commit(args, index, flag, shouldCommit)
   values, issues = getValues()
-  if isFlag(args[1]) then showFlagExpectingMessageError(args[1]) end
+
+  message = generateMessageForCommit(values, issues, args, flag, shouldCommit)
+  # if the flag is set, commit, otherwise just print the commit
+  if shouldCommit then
+    addAndCommit(values, message)
+  else
+    puts message
+  end
+end
+
+def generateMessageForCommit(values, issues, args, flag, shouldCommit)
+
+  if shouldCommit and args.length < 2 then showInvalidSizeCommit(flag) end
+
+  # if there are enough arguments, check that the first one to the commit flag
+  # is not a flag
+  if args.length > 1 and isFlag(args[1]) then
+    showFlagExpectingMessageError(flag, args[1])
+  end
 
   logUsers = values[LOGGED]
   issue = values[CURRENT_ISSUE]
-
-  if args.length < 2 then showInvalidSizeCommit(flag) end
 
   message = ""
 
@@ -283,7 +300,10 @@ def commit(args, index, flag)
     # starting from third argument
     message = additionalFlagsToCommit(args, message, 2, flag)
   end
+  message
+end
 
+def addAndCommit(values, message)
   addAtts = values[ADD]
   if isDefined(addAtts) then
     puts "adding all"
@@ -306,7 +326,7 @@ end
 
 def closes(args, message, indexOnEntry, flag)
   # if the arguments are less than the given index plus one argument, throw an error
-  addAppendingFlag(args, message, indexOnEntry, flag, CLOSES, "")
+  addAppendingFlag(args, message, indexOnEntry, flag, CLOSES, ISSUE_MENTION)
 end
 
 
@@ -351,8 +371,8 @@ def isFlag(str)
   str[0] == '-'
 end
 
-def showFlagExpectingMessageError(flag)
-  puts "Error: -c expects a message, but got #{flag}."
+def showFlagExpectingMessageError(flag, value)
+  puts "Error: #{flag} expects a message, but got \"#{value}\"."
   expectedCommit(flag)
 end
 
@@ -552,19 +572,21 @@ case arg
 when "-l"
   handleLog(ARGV, index)
 when "-c"
-  commit(ARGV, index, "-c")
+  commit(ARGV, index, "-c", true)
 when "-p"
   pushAtts(ARGV, index)
 when "-pf"
   # force push, no addition of attributes, with attributes from config file
   push(ARGV, index)
 when "-cpf"
-  commit(ARGV, index, "-cpf")
+  commit(ARGV, index, "-cpf", true)
   push(ARGV, index)
 when "-r"
   removeConfig(ARGV, index)
 when "status", "-s"
   showStatus()
+when "-sc"
+  commit(ARGV, index, "-c", false)
 when "-a"
   alwaysAddAll()
 when "-i"
