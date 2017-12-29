@@ -3,8 +3,8 @@ require 'find'
 require 'tempfile'
 require 'set'
 
-CONFIG_FILE = ".git-fast"
-TEMP_CONFIG = "temp.git-fast"
+CONFIG_FILE = ".git-god"
+TEMP_CONFIG = "temp.git-god"
 LOGGED = "logged"
 DEFAULT_START_LOG = "["
 DEFAULT_END_LOG = "]"
@@ -38,7 +38,7 @@ def handleLog(args, index)
   args.each_with_index do |arg, i|
     arg_spl = arg.split("=")
     case arg_spl[0]
-    when "--del"
+    when "-del"
 
       if args.length == 2 then
         showNoLogIncludedError()
@@ -80,7 +80,7 @@ def showInvalidDelimiterError()
 end
 
 def toAddDelimiterTut()
-  puts "To add a delimiter, add flag --del=\"<delimiter>\". Note the double quotes."
+  puts "To add a delimiter, add flag -del=\"<delimiter>\". Note the double quotes."
   puts "<delimiter> must be one or two characters."
   exit(128)
 end
@@ -354,7 +354,9 @@ def addAppendingFlag(args, message, indexOnEntry, flag, preceding, beforeRef)
   stripped_msg = args[1].strip
   # if the last character is a full stop or the message is empty then dont add
   # another full stop
-  if message.strip()[message.length - 1] == '.' or stripped_msg.length == 0 then
+  
+  totalmsg_strip = message.strip
+  if totalmsg_strip[totalmsg_strip.length - 1] == '.' or stripped_msg.length == 0 then
     message = message + " #{preceding} #{refs}."
   else
     message = message + ". #{preceding} #{refs}."
@@ -383,7 +385,7 @@ def showFlagExpectingMessageError(flag, value)
 end
 
 def expectedCommit(flag)
-  puts "Expected: git-fast #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "Expected: gg #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
   exit(128)
 end
 
@@ -428,7 +430,7 @@ def pushAtts(args, index)
     value_spl = value.split("=")
     if value_spl.length == 1 then showPushAttsWithNoAttsError end
     case value_spl[0]
-    when "--o"
+    when "-o"
       writeToFileOrOverwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
     else
       unsupportedCommand(value_spl[0])
@@ -468,7 +470,7 @@ def pullAtts(args)
     value_spl = value.split("=")
     if value_spl.length == 1 then showPullAttsWithNoAttsError end
     case value_spl[0]
-    when "--o"
+    when "-o"
       writeToFileOrOverwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
     else
       unsupportedCommand(value_spl[0])
@@ -483,13 +485,13 @@ end
 
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
-  puts "To add a configuration for push, use \"git-fast -pc --o=<branch-name>\"."
+  puts "To add a configuration for push, use \"gg -pc -o=<branch-name>\"."
   exit(128)
 end
 
 def showPullAttsWithNoAttsError()
   puts "Error: trying to add a configuration for pull but no attributes are found."
-  puts "To add a configuration for pull, use \"git-fast -pl --o=<branch-name>\"."
+  puts "To add a configuration for pull, use \"gg -pl -o=<branch-name>\"."
   exit(128)
 end
 
@@ -538,9 +540,9 @@ def issue(args, index)
   args[index + 1..-1].each do |arg|
     arg_spl = arg.split("=")
     case arg_spl[0]
-    when "--name"
+    when "-name"
       name = arg_spl[1]
-    when "--alias"
+    when "-alias"
       aliasForName = arg_spl[1]
     else
       values, issues = getValues()
@@ -607,44 +609,44 @@ def showIncorrectIssueArgLengthError(len)
 end
 
 def expectedForIssue()
-  puts "Expected: \"git-fast -i --name=<issue-name>\" or \"git-fast -i --name=<issue-name> --alias=<alias>\"."
-  puts "To set the current issue, use \"git-fast -i -<alias or name of issue>\"."
+  puts "Expected: \"gg -i -name=<issue-name>\" or \"gg -i -name=<issue-name> -alias=<alias>\"."
+  puts "To set the current issue, use \"gg -i -<alias or name of issue>\"."
   exit(128)
 end
 
 def unsupportedCommand(arg)
   puts "Error: unexpected command \"#{arg}\" found."
-  puts "To view a full list of all arguments to git-fast, run git-fast --commands."
+  puts "To view a full list of all arguments to gg, run gg -commands."
 end
 
 def printCommands()
   puts ""
-  puts "List of commands in git-fast:"
+  puts "List of commands in git-god:"
   puts "Note: opt(x) means x is optional."
   puts ""
-  puts "git-fast -a"
-  puts "git-fast -b"
-  puts "git-fast -ba"
-  puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "git-fast -ch <branch-name>"
-  puts "git-fast -cn <repo-url>"
-  puts "git-fast --commands"
-  puts "git-fast -cp \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "git-fast -d <branch-name>"
-  puts "git-fast -di"
-  puts "git-fast -fa"
-  puts "git-fast -gs"
-  puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
-  puts "git-fast -l opt([--del=<delimiter>]) [<logs>]"
-  puts "git-fast -nb <branch-name>"
-  puts "git-fast -p opt(<branch-name>)"
-  puts "git-fast -pc --o=<branch-name>"
-  puts "git-fast -pl opt(<branch-name>)"
-  puts "git-fast -plc --o=<branch-name>"
-  puts "git-fast -r opt(<flags>)"
-  puts "git-fast [-s|status]"
-  puts "git-fast -sc \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "git-fast -u"
+  puts "gg a"
+  puts "gg b"
+  puts "gg ba"
+  puts "gg c \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "gg ch <branch-name>"
+  puts "gg cn <repo-url>"
+  puts "gg -commands"
+  puts "gg cp \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "gg d <branch-name>"
+  puts "gg di"
+  puts "gg fa"
+  puts "gg gs"
+  puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
+  puts "gg l opt([-del=<delimiter>]) [<logs>]"
+  puts "gg nb <branch-name>"
+  puts "gg p opt(<branch-name>)"
+  puts "gg pc -o=<branch-name>"
+  puts "gg pl opt(<branch-name>)"
+  puts "gg plc -o=<branch-name>"
+  puts "gg r opt(<flags>)"
+  puts "gg [-s|status]"
+  puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "gg u"
   puts ""
 end
 
@@ -716,55 +718,55 @@ end
 arg = ARGV[0]
 index = 0
 case arg
-when "-l"
+when "l"
   handleLog(ARGV, index)
-when "-c"
+when "c"
   commit(ARGV, index, "-c", true)
-when "-pc"
+when "pc"
   pushAtts(ARGV, index)
-when "-p"
-  # load from configuration unless it is specified
   push(ARGV, index, "-p", false, true)
-when "-cp"
+when "p"
+  # load from configuration unless it is specified
+when "cp"
   commit(ARGV, index, "-cp", true)
   # do not expect more arguments
   push(ARGV, index, "-cp", true, false)
-when "-gs"
+when "gs"
   puts `git status`
-when "-b"
+when "b"
   puts `git branch`
-when "-ba"
+when "ba"
   puts `git branch -a`
-when "-r"
+when "r"
   removeConfig(ARGV, index)
-when "status", "-s"
+when "status", "s"
   showStatus()
-when "-sc"
+when "sc"
   # do not commit, only show message
   commit(ARGV, index, "-c", false)
-when "-a"
+when "a"
   alwaysAddAll()
-when "-i"
+when "i"
   issue(ARGV, index)
-when "-nb"
+when "nb"
   newBranch(ARGV, "-nb")
-when "-fa"
+when "fa"
   puts `git fetch --all`
-when "-ch"
+when "ch"
   checkoutBranch(ARGV, "-ch")
-when "-u"
+when "u"
   puts `git remote get-url origin`
-when "-cn"
+when "cn"
   clone(ARGV, "-cn")
-when "-d"
+when "d"
   deleteBranch(ARGV, "-d")
-when "-di"
+when "di"
   puts `git diff`
-when "-plc"
+when "plc"
   pullAtts(ARGV)
-when "-pl"
+when "pl"
   pull(ARGV, "-pl")
-when "--commands"
+when "-commands"
   printCommands()
 else
   unsupportedCommand(arg)
