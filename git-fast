@@ -565,6 +565,7 @@ def printCommands()
   puts "Note: opt(x) means x is optional."
   puts ""
   puts "git-fast -a"
+  puts "git-fast -b"
   puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast --commands"
   puts "git-fast -cp \"<some message>\" [-cl <args>|-ct <args>]"
