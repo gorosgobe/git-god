@@ -7,6 +7,7 @@ Commit the current message and push.
 ```
 git-fast -c            # extracts message from configuration 
 git-fast -c "message"  # adds message to configuration
+git-fast -c "message -cl #189 #200 -ct gorosgobe"    # commits: message. Closes 189, 200. Contributors: @gorosgobe.
 git-fast -pf
 ```
 Shows the current message/template to commit
