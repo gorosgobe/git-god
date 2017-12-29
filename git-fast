@@ -551,14 +551,32 @@ def printCommands()
   puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast --commands"
   puts "git-fast -cpf \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -gs"
   puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
   puts "git-fast -l opt([--del=<delimiter>]) [<logs>]"
   puts "git-fast -p --o=<branch-name>"
   puts "git-fast -pf"
   puts "git-fast -r [<flags>]"
   puts "git-fast [-s|status]"
+  puts "git-fast -sc \"<some message>\" [-cl <args>|-ct <args>]"
   puts ""
 end
+
+def showNotGitRepoError()
+  puts "Error: current directory is not a git repository."
+  exit(128)
+end
+
+def checkIfIsGitRepo
+  # suppressing the output of git status
+  out = system "git", "status", :out => File::NULL, :err => File::NULL
+  if $?.exitstatus != 0 then
+    showNotGitRepoError()
+  end
+end
+
+# check if it is a git repository
+checkIfIsGitRepo()
 
 # create configuration file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
@@ -581,6 +599,8 @@ when "-pf"
 when "-cpf"
   commit(ARGV, index, "-cpf", true)
   push(ARGV, index)
+when "-gs"
+  puts `git status`
 when "-r"
   removeConfig(ARGV, index)
 when "status", "-s"
