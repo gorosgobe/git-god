@@ -18,11 +18,13 @@ CLOSES = "Closes"
 CONTRIBUTORS = "Contributors:"
 MENTION = "@"
 ISSUE_MENTION = "#"
+PULL_ORIGIN = "pull_origin"
 
 LOG_PRIORITY = 0
 ADD_PRIORITY = 1
 PUSH_ORIGIN_PRIORITY = 2
-CURRENT_PRIORITY = 3
+PULL_ORIGIN_PRIORITY = 3
+CURRENT_PRIORITY = 4
 
 def handleLog(args, index)
   defaultDelimiter = true
@@ -200,6 +202,8 @@ def showStatus()
       info[ADD_PRIORITY] = line_array[1..-1]
     when PUSH_ORIGIN
       info[PUSH_ORIGIN_PRIORITY] = line_array[1..-1]
+    when PULL_ORIGIN
+      info[PULL_ORIGIN_PRIORITY] = line_array[1..-1]
     when ISSUE
       issues << line_array[1..-1]
     when CURRENT_ISSUE
@@ -218,6 +222,8 @@ def showStatus()
       if v[0].length != 0 then puts "add: " + ALL end
     when PUSH_ORIGIN_PRIORITY
       puts "pushing to: #{v[0]}"
+    when PULL_ORIGIN_PRIORITY
+      puts "pulling from: #{v[0]}"
     when CURRENT_PRIORITY
       puts "current issue: #{v[0]}"
     end
@@ -424,6 +430,25 @@ def pushAtts(args, index)
     case value_spl[0]
     when "--o"
       writeToFileOrOverwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+    else
+      unsupportedCommand(value_spl[0])
+    end
+  end
+end
+
+def pullAtts(args)
+  if args.length == 1 then
+    showPullAttsWithNoAttsError()
+  end
+
+  args[1..-1].each do |value|
+    value_spl = value.split("=")
+    if value_spl.length == 1 then showPullAttsWithNoAttsError end
+    case value_spl[0]
+    when "--o"
+      writeToFileOrOverwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
+    else
+      unsupportedCommand(value_spl[0])
     end
   end
 end
@@ -436,6 +461,12 @@ end
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
   puts "To add a configuration for push, use \"git-fast -pc --o=<branch-name>\"."
+  exit(128)
+end
+
+def showPullAttsWithNoAttsError()
+  puts "Error: trying to add a configuration for pull but no attributes are found."
+  puts "To add a configuration for pull, use \"git-fast -pl --o=<branch-name>\"."
   exit(128)
 end
 
@@ -458,6 +489,8 @@ def getKeyFromFlag(flag)
     LOGGED
   when "-pc"
     PUSH_ORIGIN
+  when "-plc"
+    PULL_ORIGIN
   when "-a"
     ADD
   when "-i"
@@ -466,7 +499,7 @@ def getKeyFromFlag(flag)
 end
 
 def isConfigurable(flag)
-  flag == "-l" or flag == "-pc" or flag == "-a" or flag == "-i"
+  flag == "-l" or flag == "-pc" or flag == "-a" or flag == "-i" or flag == "-plc"
 end
 
 def issue(args, index)
@@ -568,11 +601,14 @@ def printCommands()
   puts ""
   puts "git-fast -a"
   puts "git-fast -b"
+  puts "git-fast -ba"
   puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast -ch <branch-name>"
-  puts "git-fast -cln <repo-url>"
+  puts "git-fast -cn <repo-url>"
   puts "git-fast --commands"
   puts "git-fast -cp \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -d <branch-name>"
+  puts "git-fast -di"
   puts "git-fast -fa"
   puts "git-fast -gs"
   puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
@@ -580,6 +616,8 @@ def printCommands()
   puts "git-fast -nb <branch-name>"
   puts "git-fast -p opt(<branch-name>)"
   puts "git-fast -pc --o=<branch-name>"
+  puts "git-fast -pl opt(<branch-name>)"
+  puts "git-fast -plc --o=<branch-name>"
   puts "git-fast -r opt(<flags>)"
   puts "git-fast [-s|status]"
   puts "git-fast -sc \"<some message>\" [-cl <args>|-ct <args>]"
@@ -633,6 +671,16 @@ def clone(args, flag)
   puts "cloned #{repo}"
   # puts `git clone #{repo}`
 end
+
+def deleteBranch(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  branch = args[1]
+  puts "deleted #{branch}"
+  # puts `git branch -d #{branch}`
+end
+
+
 # check if it is a git repository
 checkIfIsGitRepo()
 
@@ -662,6 +710,8 @@ when "-gs"
   puts `git status`
 when "-b"
   puts `git branch`
+when "-ba"
+  puts `git branch -a`
 when "-r"
   removeConfig(ARGV, index)
 when "status", "-s"
@@ -681,8 +731,14 @@ when "-ch"
   checkoutBranch(ARGV, "-ch")
 when "-u"
   puts `git remote get-url origin`
-when "-cln"
-  clone(ARGV, "-cln")
+when "-cn"
+  clone(ARGV, "-cn")
+when "-d"
+  deleteBranch(ARGV, "-d")
+when "-di"
+  puts `git diff`
+when "-plc"
+  pullAtts(ARGV)
 when "--commands"
   printCommands()
 else
