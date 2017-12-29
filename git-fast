@@ -381,9 +381,11 @@ def expectedCommit(flag)
   exit(128)
 end
 
-def push(args, index, alwaysLoadFromConfiguration)
+def push(args, index, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
 
-  if args.length > 2 then showTooManyArgumentsForPushError(args.length) end
+  if takesLessThanTwoArgs and args.length > 2 then
+    showTooManyArgumentsError(flag, 1, args.length - 1)
+  end
 
   values, issues = getValues()
   # if always load from configuration then it is a -p from -cp
@@ -567,16 +569,21 @@ def printCommands()
   puts "git-fast -a"
   puts "git-fast -b"
   puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -ch <branch-name>"
+  puts "git-fast -cln <repo-url>"
   puts "git-fast --commands"
   puts "git-fast -cp \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -fa"
   puts "git-fast -gs"
   puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
   puts "git-fast -l opt([--del=<delimiter>]) [<logs>]"
+  puts "git-fast -nb <branch-name>"
   puts "git-fast -p opt(<branch-name>)"
   puts "git-fast -pc --o=<branch-name>"
-  puts "git-fast -r [<flags>]"
+  puts "git-fast -r opt(<flags>)"
   puts "git-fast [-s|status]"
   puts "git-fast -sc \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -u"
   puts ""
 end
 
@@ -593,6 +600,39 @@ def checkIfIsGitRepo
   end
 end
 
+def showTooManyArgumentsError(flag, expected, len)
+  puts "Error: #{flag} received too many arguments. Expected #{expected}, got #{len}."
+  exit(128)
+end
+
+def showNotEnoughArgumentsError(flag, expected, len)
+  puts "Error: #{flag} did not receive enough arguments. Expected #{expected}, got #{len}."
+  exit(128)
+end
+
+def newBranch(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  branch_name = args[1]
+  puts "created new branch #{branch_name}"
+  # puts `git checkout -b #{branch_name}`
+end
+
+def checkoutBranch(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  branch_name = args[1]
+  puts "checkout branch #{branch_name}"
+  # puts `git checkout #{branch_name}`
+end
+
+def clone(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  repo = args[1]
+  puts "cloned #{repo}"
+  # puts `git clone #{repo}`
+end
 # check if it is a git repository
 checkIfIsGitRepo()
 
@@ -613,11 +653,11 @@ when "-pc"
   pushAtts(ARGV, index)
 when "-p"
   # load from configuration unless it is specified
-  push(ARGV, index, false)
+  push(ARGV, index, "-p", false, true)
 when "-cp"
   commit(ARGV, index, "-cp", true)
   # do not expect more arguments
-  push(ARGV, index, true)
+  push(ARGV, index, "-cp", true, false)
 when "-gs"
   puts `git status`
 when "-b"
@@ -633,6 +673,16 @@ when "-a"
   alwaysAddAll()
 when "-i"
   issue(ARGV, index)
+when "-nb"
+  newBranch(ARGV, "-nb")
+when "-fa"
+  puts `git fetch --all`
+when "-ch"
+  checkoutBranch(ARGV, "-ch")
+when "-u"
+  puts `git remote get-url origin`
+when "-cln"
+  clone(ARGV, "-cln")
 when "--commands"
   printCommands()
 else
