@@ -7,7 +7,8 @@ Commit the current message and push.
 ```
 git-fast -c            # extracts message from configuration 
 git-fast -c "message"  # adds message to configuration
-git-fast -c "message -cl #189 #200 -ct gorosgobe"    # commits: message. Closes 189, 200. Contributors: @gorosgobe.
+git-fast -c "message -cl #189 #200 -ct gorosgobe"
+# commits: "message. Closes 189, 200. Contributors: @gorosgobe."
 git-fast -pf
 ```
 Shows the current message/template to commit
@@ -45,9 +46,9 @@ Adds issue name to commit messages.
 ```
 git-fast -l gorosgobe
 git-fast -i --name="bugFix3" --alias=b3
-git-fast -c "commit message"     # results in commit: [gorosgobe]->bugFix3 commit message
+git-fast -c "commit message"     # commits: "[gorosgobe]->bugFix3 commit message"
 git-fast -i                      # sets current issue to be none
-git-fast -c "commit message"     # results in commit: [gorosgobe] commit message
+git-fast -c "commit message"     # commits: [gorosgobe] commit message"
 git-fast -i -b3
-git-fast -c "commit message 2"   # results in commit: [gorosgobe]->bugFix3 commit message 2
+git-fast -c "commit message 2"   # commits: "[gorosgobe]->bugFix3 commit message 2"
 ```
