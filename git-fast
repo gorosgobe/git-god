@@ -381,12 +381,30 @@ def expectedCommit(flag)
   exit(128)
 end
 
-def push(args, index)
+def push(args, index, alwaysLoadFromConfiguration)
+
+  if args.length > 2 then showTooManyArgumentsForPushError(args.length) end
+
   values, issues = getValues()
-  pushAtts = values[PUSH_ORIGIN]
+  # if always load from configuration then it is a -p from -cp
+  if alwaysLoadFromConfiguration then
+    pushAtts = values[PUSH_ORIGIN]
+  else
+  # if we do not need to load from configuration, and there is a branch push to
+  # that branch. If there is not a branch, then it will be nil, and will default
+  # to master
+    if args.length == 2 then
+      pushAtts = args[1]
+    else
+      # there is only one argument, get from configuration
+      # if configuration is nil then will default to master below
+      pushAtts = values[PUSH_ORIGIN]
+    end
+  end
+
   if not isDefined(pushAtts) then
-    puts "pushing normal"
-    # puts `git push`
+    puts "pushing normal origin master"
+    # puts `git push origin master`
   else
     puts "pushing origin #{pushAtts}"
     # puts `git push origin #{branch}`
@@ -415,8 +433,7 @@ end
 
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
-  puts "To add a configuration for push, use \"git-fast -p --o=<branch-name>\"."
-  puts "This is the equivalent of \"git push origin branch-name\"."
+  puts "To add a configuration for push, use \"git-fast -pc --o=<branch-name>\"."
   exit(128)
 end
 
@@ -437,7 +454,7 @@ def getKeyFromFlag(flag)
   case flag
   when "-l"
     LOGGED
-  when "-p"
+  when "-pc"
     PUSH_ORIGIN
   when "-a"
     ADD
@@ -447,7 +464,7 @@ def getKeyFromFlag(flag)
 end
 
 def isConfigurable(flag)
-  flag == "-l" or flag == "-p" or flag == "-a" or flag == "-i"
+  flag == "-l" or flag == "-pc" or flag == "-a" or flag == "-i"
 end
 
 def issue(args, index)
@@ -550,12 +567,12 @@ def printCommands()
   puts "git-fast -a"
   puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast --commands"
-  puts "git-fast -cpf \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -cp \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast -gs"
   puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
   puts "git-fast -l opt([--del=<delimiter>]) [<logs>]"
-  puts "git-fast -p --o=<branch-name>"
-  puts "git-fast -pf"
+  puts "git-fast -p opt(<branch-name>)"
+  puts "git-fast -pc --o=<branch-name>"
   puts "git-fast -r [<flags>]"
   puts "git-fast [-s|status]"
   puts "git-fast -sc \"<some message>\" [-cl <args>|-ct <args>]"
@@ -591,21 +608,25 @@ when "-l"
   handleLog(ARGV, index)
 when "-c"
   commit(ARGV, index, "-c", true)
-when "-p"
+when "-pc"
   pushAtts(ARGV, index)
-when "-pf"
-  # force push, no addition of attributes, with attributes from config file
-  push(ARGV, index)
-when "-cpf"
-  commit(ARGV, index, "-cpf", true)
-  push(ARGV, index)
+when "-p"
+  # load from configuration unless it is specified
+  push(ARGV, index, false)
+when "-cp"
+  commit(ARGV, index, "-cp", true)
+  # do not expect more arguments
+  push(ARGV, index, true)
 when "-gs"
   puts `git status`
+when "-b"
+  puts `git branch`
 when "-r"
   removeConfig(ARGV, index)
 when "status", "-s"
   showStatus()
 when "-sc"
+  # do not commit, only show message
   commit(ARGV, index, "-c", false)
 when "-a"
   alwaysAddAll()
