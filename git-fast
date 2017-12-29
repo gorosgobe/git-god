@@ -14,6 +14,9 @@ PUSH_ORIGIN = "push_origin"
 ISSUE = "issue"
 CURRENT_ISSUE = "current_issue"
 ISSUE_DELIMITER = "->"
+CLOSES = "Closes"
+CONTRIBUTORS = "Contributors:"
+MENTION = "@"
 
 LOG_PRIORITY = 0
 ADD_PRIORITY = 1
@@ -256,10 +259,12 @@ end
 
 def commit(args, index, flag)
   values, issues = getValues()
+  if isFlag(args[1]) then showFlagExpectingMessageError(args[1]) end
+
   logUsers = values[LOGGED]
   issue = values[CURRENT_ISSUE]
 
-  if args.length != 2 then showInvalidSizeCommit(flag) end
+  if args.length < 2 then showInvalidSizeCommit(flag) end
 
   message = ""
 
@@ -273,16 +278,88 @@ def commit(args, index, flag)
 
   message += " " + args[1].to_s
 
+  if args.length > 2 then
+    # commit message might have additional flags
+    # starting from third argument
+    message = additionalFlagsToCommit(args, message, 2, flag)
+  end
+
   addAtts = values[ADD]
   if isDefined(addAtts) then
     puts "adding all"
     # puts `git add -A`
   end
   puts "commiting..."
-  puts "#{message}"
+  puts "\"#{message}\""
   # puts `git commit -m \"#{message}\"`
 end
 
+def additionalFlagsToCommit(args, message, index, flag)
+  # starting from the third argument
+  case args[index]
+  when "-cl"
+    closes(args, message, index, flag)
+  when "-ct"
+    contributes(args, message, index, flag)
+  end
+end
+
+def closes(args, message, indexOnEntry, flag)
+  # if the arguments are less than the given index plus one argument, throw an error
+  addAppendingFlag(args, message, indexOnEntry, flag, CLOSES, "")
+end
+
+
+def contributes(args, message, indexOnEntry, flag)
+  addAppendingFlag(args, message, indexOnEntry, flag, CONTRIBUTORS, MENTION)
+end
+
+def addAppendingFlag(args, message, indexOnEntry, flag, preceding, beforeRef)
+  if args.length <= indexOnEntry + 1 then showInvalidSizeCommit(flag) end
+  refs = Array.new
+  # start at argument
+  index = indexOnEntry + 1
+  while index < args.length and not isFlag(args[index]) do
+    refs << args[index]
+    index += 1
+  end
+  refs = addToStart(refs, beforeRef)
+  refs = refs.join(", ")
+  stripped_msg = args[1].strip
+  # if the last character is a full stop or the message is empty then dont add
+  # another full stop
+  if message.strip()[message.length - 1] == '.' or stripped_msg.length == 0 then
+    message = message + " #{preceding} #{refs}."
+  else
+    message = message + ". #{preceding} #{refs}."
+  end
+  if index < args.length then
+    message = additionalFlagsToCommit(args, message, index, flag)
+  end
+  message
+end
+
+def addToStart(refs, beforeRef)
+  result = Array.new
+  refs.each do |ref|
+    result << beforeRef + ref
+  end
+  result
+end
+
+def isFlag(str)
+  str[0] == '-'
+end
+
+def showFlagExpectingMessageError(flag)
+  puts "Error: -c expects a message, but got #{flag}."
+  expectedCommit(flag)
+end
+
+def expectedCommit(flag)
+  puts "Expected: git-fast #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
+  exit(128)
+end
 
 def push(args, index)
   values, issues = getValues()
@@ -313,8 +390,7 @@ end
 
 def showInvalidSizeCommit(callingFlag)
   puts "Error: trying to commit but incorrect number of arguments supplied."
-  puts "Expected: git-fast #{callingFlag} \"<some message>\""
-  exit(128)
+  expectedCommit(callingFlag)
 end
 
 def showPushAttsWithNoAttsError()
@@ -449,16 +525,17 @@ end
 def printCommands()
   puts ""
   puts "List of commands in git-fast:"
+  puts "Note: opt(x) means x is optional."
   puts ""
   puts "git-fast -a"
-  puts "git-fast -c"
+  puts "git-fast -c \"<some message>\" [-cl <args>|-ct <args>]"
   puts "git-fast --commands"
-  puts "git-fast -cpf"
-  puts "git-fast -i"
-  puts "git-fast -l"
-  puts "git-fast -p"
+  puts "git-fast -cpf \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "git-fast -i opt([--name=<name> | --name=<name> --alias=<alias>])"
+  puts "git-fast -l opt([--del=<delimiter>]) [<logs>]"
+  puts "git-fast -p --o=<branch-name>"
   puts "git-fast -pf"
-  puts "git-fast -r"
+  puts "git-fast -r [<flags>]"
   puts "git-fast [-s|status]"
   puts ""
 end
