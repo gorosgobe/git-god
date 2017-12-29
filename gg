@@ -354,7 +354,7 @@ def addAppendingFlag(args, message, indexOnEntry, flag, preceding, beforeRef)
   stripped_msg = args[1].strip
   # if the last character is a full stop or the message is empty then dont add
   # another full stop
-  
+
   totalmsg_strip = message.strip
   if totalmsg_strip[totalmsg_strip.length - 1] == '.' or stripped_msg.length == 0 then
     message = message + " #{preceding} #{refs}."
@@ -485,13 +485,13 @@ end
 
 def showPushAttsWithNoAttsError()
   puts "Error: trying to add a configuration for push but no attributes are found."
-  puts "To add a configuration for push, use \"gg -pc -o=<branch-name>\"."
+  puts "To add a configuration for push, use \"gg pc -o=<branch-name>\"."
   exit(128)
 end
 
 def showPullAttsWithNoAttsError()
   puts "Error: trying to add a configuration for pull but no attributes are found."
-  puts "To add a configuration for pull, use \"gg -pl -o=<branch-name>\"."
+  puts "To add a configuration for pull, use \"gg pl -o=<branch-name>\"."
   exit(128)
 end
 
@@ -510,21 +510,21 @@ def getKeyFromFlag(flag)
     exit(128)
   end
   case flag
-  when "-l"
+  when "l"
     LOGGED
-  when "-pc"
+  when "pc"
     PUSH_ORIGIN
-  when "-plc"
+  when "plc"
     PULL_ORIGIN
-  when "-a"
+  when "a"
     ADD
-  when "-i"
+  when "i"
     ISSUE
   end
 end
 
 def isConfigurable(flag)
-  flag == "-l" or flag == "-pc" or flag == "-a" or flag == "-i" or flag == "-plc"
+  flag == "l" or flag == "pc" or flag == "a" or flag == "i" or flag == "plc"
 end
 
 def issue(args, index)
@@ -540,9 +540,9 @@ def issue(args, index)
   args[index + 1..-1].each do |arg|
     arg_spl = arg.split("=")
     case arg_spl[0]
-    when "-name"
+    when "-name", "-n"
       name = arg_spl[1]
-    when "-alias"
+    when "-alias", "-a"
       aliasForName = arg_spl[1]
     else
       values, issues = getValues()
@@ -609,8 +609,9 @@ def showIncorrectIssueArgLengthError(len)
 end
 
 def expectedForIssue()
-  puts "Expected: \"gg -i -name=<issue-name>\" or \"gg -i -name=<issue-name> -alias=<alias>\"."
-  puts "To set the current issue, use \"gg -i -<alias or name of issue>\"."
+  puts "Expected: \"gg i -name=<issue-name>\" or \"gg i -name=<issue-name> -alias=<alias>\"."
+  puts "Alternatively: \"gg i -n=<issue-name>\" or \"gg i -n=<issue-name> -a=<alias>\"."
+  puts "To set the current issue, use \"gg i -<alias or name of issue>\"."
   exit(128)
 end
 
@@ -637,6 +638,8 @@ def printCommands()
   puts "gg fa"
   puts "gg gs"
   puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
+  puts "or"
+  puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
   puts "gg l opt([-del=<delimiter>]) [<logs>]"
   puts "gg nb <branch-name>"
   puts "gg p opt(<branch-name>)"
@@ -644,7 +647,7 @@ def printCommands()
   puts "gg pl opt(<branch-name>)"
   puts "gg plc -o=<branch-name>"
   puts "gg r opt(<flags>)"
-  puts "gg [-s|status]"
+  puts "gg [s|status]"
   puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
   puts "gg u"
   puts ""
@@ -721,16 +724,16 @@ case arg
 when "l"
   handleLog(ARGV, index)
 when "c"
-  commit(ARGV, index, "-c", true)
+  commit(ARGV, index, "c", true)
 when "pc"
   pushAtts(ARGV, index)
-  push(ARGV, index, "-p", false, true)
+  push(ARGV, index, "p", false, true)
 when "p"
   # load from configuration unless it is specified
 when "cp"
-  commit(ARGV, index, "-cp", true)
+  commit(ARGV, index, "cp", true)
   # do not expect more arguments
-  push(ARGV, index, "-cp", true, false)
+  push(ARGV, index, "cp", true, false)
 when "gs"
   puts `git status`
 when "b"
@@ -743,29 +746,29 @@ when "status", "s"
   showStatus()
 when "sc"
   # do not commit, only show message
-  commit(ARGV, index, "-c", false)
+  commit(ARGV, index, "c", false)
 when "a"
   alwaysAddAll()
 when "i"
   issue(ARGV, index)
 when "nb"
-  newBranch(ARGV, "-nb")
+  newBranch(ARGV, "nb")
 when "fa"
   puts `git fetch --all`
 when "ch"
-  checkoutBranch(ARGV, "-ch")
+  checkoutBranch(ARGV, "ch")
 when "u"
   puts `git remote get-url origin`
 when "cn"
-  clone(ARGV, "-cn")
+  clone(ARGV, "cn")
 when "d"
-  deleteBranch(ARGV, "-d")
+  deleteBranch(ARGV, "d")
 when "di"
   puts `git diff`
 when "plc"
   pullAtts(ARGV)
 when "pl"
-  pull(ARGV, "-pl")
+  pull(ARGV, "pl")
 when "-commands"
   printCommands()
 else
