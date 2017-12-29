@@ -2,6 +2,17 @@
 
 A script that allows to save configurations for easier, more meaningful and faster comitting.
 
+# Install
+
+Add the following line to the bottom of your ~/.bashrc file:
+```
+export PATH=$PATH:<path-to-repo>
+```
+If you wish to feel even more like a god, add the following line too:
+```
+alias g='gg'
+```
+
 # Features
 Commit the current message and push.
 ```
