@@ -436,6 +436,29 @@ def pushAtts(args, index)
   end
 end
 
+def pull(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+
+  values, issues = getValues()
+
+  if args.length == 1 then
+    # grab pull origin from configuration
+    pullOrigin = values[PULL_ORIGIN]
+  else
+    # length must be two, therefore use the argument given as origin
+    pullOrigin = args[1]
+  end
+
+  if not isDefined(pullOrigin) then
+    # if not defined in configuration file and not given in argument to flag
+    # then choose master by default
+    pullOrigin = "master"
+  end
+
+  puts "pulling origin #{pullOrigin}"
+  # puts `git pull origin #{pullOrigin}`
+end
+
 def pullAtts(args)
   if args.length == 1 then
     showPullAttsWithNoAttsError()
@@ -739,6 +762,8 @@ when "-di"
   puts `git diff`
 when "-plc"
   pullAtts(ARGV)
+when "-pl"
+  pull(ARGV, "-pl")
 when "--commands"
   printCommands()
 else
