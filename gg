@@ -313,11 +313,11 @@ def addAndCommit(values, message)
   addAtts = values[ADD]
   if isDefined(addAtts) then
     puts "adding all"
-    # puts `git add -A`
+    puts `git add -A`
   end
   puts "commiting..."
   puts "\"#{message}\""
-  # puts `git commit -m \"#{message}\"`
+  puts `git commit -m \"#{message}\"`
 end
 
 def additionalFlagsToCommit(args, message, index, flag)
@@ -413,11 +413,11 @@ def push(args, index, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
   end
 
   if not isDefined(pushAtts) then
-    puts "pushing normal origin master"
-    # puts `git push origin master`
+    puts "pushing to master"
+    puts `git push origin master`
   else
-    puts "pushing origin #{pushAtts}"
-    # puts `git push origin #{branch}`
+    puts "pushing to #{pushAtts}"
+    puts `git push origin #{branch}`
   end
 end
 
@@ -457,8 +457,8 @@ def pull(args, flag)
     pullOrigin = "master"
   end
 
-  puts "pulling origin #{pullOrigin}"
-  # puts `git pull origin #{pullOrigin}`
+  puts "pulling from #{pullOrigin}"
+  puts `git pull origin #{pullOrigin}`
 end
 
 def pullAtts(args)
@@ -638,7 +638,6 @@ def printCommands()
   puts "gg fa"
   puts "gg gs"
   puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
-  puts "or"
   puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
   puts "gg l opt([-del=<delimiter>]) [<logs>]"
   puts "gg nb <branch-name>"
@@ -680,32 +679,32 @@ def newBranch(args, flag)
   if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
   if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
   branch_name = args[1]
-  puts "created new branch #{branch_name}"
-  # puts `git checkout -b #{branch_name}`
+  puts "creating new branch: #{branch_name}"
+  puts `git checkout -b #{branch_name}`
 end
 
 def checkoutBranch(args, flag)
   if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
   if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
   branch_name = args[1]
-  puts "checkout branch #{branch_name}"
-  # puts `git checkout #{branch_name}`
+  puts "checkout to branch #{branch_name}"
+  puts `git checkout #{branch_name}`
 end
 
 def clone(args, flag)
   if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
   if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
   repo = args[1]
-  puts "cloned #{repo}"
-  # puts `git clone #{repo}`
+  puts "cloning #{repo}"
+  puts `git clone #{repo}`
 end
 
 def deleteBranch(args, flag)
   if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
   if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
   branch = args[1]
-  puts "deleted #{branch}"
-  # puts `git branch -d #{branch}`
+  puts "deleting #{branch}"
+  puts `git branch -d #{branch}`
 end
 
 
