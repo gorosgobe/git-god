@@ -119,3 +119,15 @@ Shows the current git repository status
 ```
 gg gs                # equivalent of `git status`
 ```
+Merges branch to current branch
+```
+gg m <branch-name>
+```
+Prints current branch
+```
+gg cb
+```
+Prints root of git repository
+```
+gg ro
+```
