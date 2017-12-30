@@ -3,7 +3,7 @@ require 'find'
 require 'tempfile'
 require 'set'
 
-CONFIG_FILE = ".git-god"
+CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
 LOGGED = "logged"
 DEFAULT_START_LOG = "["
@@ -646,6 +646,7 @@ def printCommands()
   puts "gg pl opt(<branch-name>)"
   puts "gg plc -o=<branch-name>"
   puts "gg r opt(<flags>)"
+  puts "gg ro"
   puts "gg [s|status]"
   puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
   puts "gg u"
@@ -710,6 +711,8 @@ end
 
 # check if it is a git repository
 checkIfIsGitRepo()
+topLevel = `git rev-parse --show-toplevel`
+CONFIG_FILE = File.join(topLevel.strip, CONFIG_FILE_EXTENSION)
 
 # create configuration file if it doesnt exist
 if not File.exist?(CONFIG_FILE) then
@@ -768,6 +771,8 @@ when "plc"
   pullAtts(ARGV)
 when "pl"
   pull(ARGV, "pl")
+when "ro"
+  puts `git rev-parse --show-toplevel`
 when "-commands"
   printCommands()
 else
