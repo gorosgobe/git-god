@@ -629,6 +629,7 @@ def printCommands()
   puts "gg b"
   puts "gg ba"
   puts "gg c \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "gg cb"
   puts "gg ch <branch-name>"
   puts "gg cn <repo-url>"
   puts "gg -commands"
@@ -640,6 +641,7 @@ def printCommands()
   puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
   puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
   puts "gg l opt([-del=<delimiter>]) [<logs>]"
+  puts "gg m <branch-name>"
   puts "gg nb <branch-name>"
   puts "gg p opt(<branch-name>)"
   puts "gg pc -o=<branch-name>"
@@ -708,10 +710,50 @@ def deleteBranch(args, flag)
   puts `git branch -d #{branch}`
 end
 
+def merge(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  branch = args[1]
+  currentBranch = getCurrentBranch()
+  puts "merging #{branch} to #{currentBranch}"
+  puts `git merge #{branch}`
+end
+
+def getCurrentBranch()
+  `git rev-parse --abbrev-ref HEAD`
+end
+
+def getTopLevel()
+  `git rev-parse --show-toplevel`
+end
+
+def getUrl()
+  `git remote get-url origin`
+end
+
+def getStatus()
+  `git status`
+end
+
+def getLocalBranches()
+  `git branch`
+end
+
+def getAllBranches()
+  `git branch -a`
+end
+
+def fetchAll()
+  `git fetch --all`
+end
+
+def getDiff()
+  `git diff`
+end
 
 # check if it is a git repository
 checkIfIsGitRepo()
-topLevel = `git rev-parse --show-toplevel`
+topLevel = getTopLevel()
 CONFIG_FILE = File.join(topLevel.strip, CONFIG_FILE_EXTENSION)
 
 # create configuration file if it doesnt exist
@@ -723,58 +765,63 @@ end
 arg = ARGV[0]
 index = 0
 case arg
-when "l"
-  handleLog(ARGV, index)
+when "a"
+  alwaysAddAll()
+when "b"
+  puts getLocalBranches()
+when "ba"
+  puts getAllBranches()
 when "c"
   commit(ARGV, index, "c", true)
-when "pc"
-  pushAtts(ARGV, index)
-  push(ARGV, index, "p", false, true)
-when "p"
-  # load from configuration unless it is specified
+when "cb"
+  # show current branch
+  puts getCurrentBranch()
+when "ch"
+  checkoutBranch(ARGV, "ch")
+when "cn"
+  clone(ARGV, "cn")
+when "-commands"
+  printCommands()
 when "cp"
   commit(ARGV, index, "cp", true)
   # do not expect more arguments
   push(ARGV, index, "cp", true, false)
+when "d"
+  deleteBranch(ARGV, "d")
+when "di"
+  puts getDiff()
+when "fa"
+  puts fetchAll()
 when "gs"
-  puts `git status`
-when "b"
-  puts `git branch`
-when "ba"
-  puts `git branch -a`
+  puts getStatus()
+when "i"
+  issue(ARGV, index)
+when "l"
+  handleLog(ARGV, index)
+when "m"
+  merge(ARGV, "m")
+when "nb"
+  newBranch(ARGV, "nb")
+when "p"
+  # load from configuration unless it is specified
+  push(ARGV, index, "p", false, true)
+when "pc"
+  pushAtts(ARGV, index)
+when "pl"
+  pull(ARGV, "pl")
+when "plc"
+  pullAtts(ARGV)
 when "r"
   removeConfig(ARGV, index)
+when "ro"
+  puts getTopLevel()
 when "status", "s"
   showStatus()
 when "sc"
   # do not commit, only show message
   commit(ARGV, index, "c", false)
-when "a"
-  alwaysAddAll()
-when "i"
-  issue(ARGV, index)
-when "nb"
-  newBranch(ARGV, "nb")
-when "fa"
-  puts `git fetch --all`
-when "ch"
-  checkoutBranch(ARGV, "ch")
 when "u"
-  puts `git remote get-url origin`
-when "cn"
-  clone(ARGV, "cn")
-when "d"
-  deleteBranch(ARGV, "d")
-when "di"
-  puts `git diff`
-when "plc"
-  pullAtts(ARGV)
-when "pl"
-  pull(ARGV, "pl")
-when "ro"
-  puts `git rev-parse --show-toplevel`
-when "-commands"
-  printCommands()
+  puts getUrl()
 else
   unsupportedCommand(arg)
 end
