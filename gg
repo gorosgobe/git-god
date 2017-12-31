@@ -264,7 +264,7 @@ def openConfigFile()
   File.open(CONFIG_FILE, "r+")
 end
 
-def commit(args, index, flag, shouldCommit)
+def commit(args, flag, shouldCommit)
   values, issues = getValues()
 
   message = generateMessageForCommit(values, issues, args, flag, shouldCommit)
@@ -389,7 +389,7 @@ def expectedCommit(flag)
   exit(128)
 end
 
-def push(args, index, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
+def push(args, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
 
   if takesLessThanTwoArgs and args.length > 2 then
     showTooManyArgumentsError(flag, 1, args.length - 1)
@@ -417,7 +417,7 @@ def push(args, index, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
     puts `git push origin master`
   else
     puts "pushing to #{pushAtts}"
-    puts `git push origin #{branch}`
+    puts `git push origin #{pushAtts}`
   end
 end
 
@@ -626,32 +626,106 @@ def printCommands()
   puts "Note: opt(x) means x is optional."
   puts ""
   puts "gg a"
+  puts "Sets the configuration to add all files for every commit."
+  puts ""
   puts "gg b"
+  puts "Shows local branches. Equivalent of \"git branch\""
+  puts ""
   puts "gg ba"
+  puts "Shows all branches. Equivalent of \"git branch -a\""
+  puts ""
   puts "gg c \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "Commits a message, with optional flags -cl (Closing issues) and -ct (Contributors)"
+  puts "Example: gg c \"hello\" -cl 23 45 -ct gorosgobe"
+  puts "Commits: hello. Closes #23, #45. Contributors: @gorosgobe."
+  puts ""
   puts "gg cb"
+  puts "Shows the current branch."
+  puts ""
   puts "gg ch <branch-name>"
+  puts "Checkout to the given branch-name. Equivalent of \"git checkout branch-name\""
+  puts ""
   puts "gg cn <repo-url>"
+  puts "Clones the given repository. Equivalent of \"git clone repo-url\""
+  puts ""
   puts "gg -commands"
+  puts "If you do not know what this is, how did you get here?!"
+  puts ""
   puts "gg cp \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "Commits and pushes. Arguments same as \"gg c\" above. Gets pushing "
+  + "branch from configuration. If it has not been configured, then defaults to "
+  + "master."
+  puts "Equivalent of \"git commit <formatted-message-from-args>\""
+  puts "              \"git push origin <config-branch-or-master>"
+  puts ""
   puts "gg d <branch-name>"
+  puts "Deletes the given branch. Equivalent of \"git branch -d branch-name\""
+  puts ""
   puts "gg di"
+  puts "Shows the difference between the current state of the repo versus the "
+  + "last commit. Equivalent of \"git diff\""
+  puts ""
   puts "gg fa"
+  puts "Equivalent of \"git fetch --all\""
+  puts ""
   puts "gg gs"
+  puts "Shows the git repo status. Equivalent of \"git status\""
+  puts ""
   puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
   puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
+  puts "Adds an issue. To add a new issue, the name attribute must be specified. "
+  + "Alias is not required. To set the current issue to be a certain issue defined "
+  + "before, use \"gg i -<alias-or-name-given-to-issue>\". To delete the current "
+  + "issue, use \"gg i\" with no arguments"
+  puts ""
   puts "gg l opt([-del=<delimiter>]) [<logs>]"
+  puts "Sets the log to be the supplied arguments. An extra argument can be "
+  + "added to specify the delimiter to use for these logs. The delimiter must be "
+  + "one or two characters long."
+  puts ""
   puts "gg m <branch-name>"
+  puts "Merges the branch supplied to the current branch. Equivalent of \"git merge\""
+  puts ""
   puts "gg nb <branch-name>"
+  puts "Creates a new branch with the supplied name. Equivalent of \"git checkout -b branch-name\""
+  puts ""
   puts "gg p opt(<branch-name>)"
+  puts "Pushes. If the branch name is supplied, pushes to that branch. If not, "
+  + "it will push to the branch configured. If no branch has been configured, will "
+  + "default to master"
+  puts ""
   puts "gg pc -o=<branch-name>"
+  puts "Sets the configuration for pushing. Attribute origin must be supplied."
+  puts ""
   puts "gg pl opt(<branch-name>)"
+  puts "Pulls from branch. If branch has not been supplied, pulls from the "
+  + "branch configured. If no branch has been configured, then it defaults to "
+   + "master."
+  puts ""
   puts "gg plc -o=<branch-name>"
+  puts "Sets the configuration for pulling. Attribute origin must be supplied."
+  puts ""
+  puts "gg prcp <parent-branch> \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "Protected commit and push."
+  puts "Equivalent of \"git pull origin parent-branch\""
+  puts "              \"git commit <commit-args>\""
+  puts "              \"git push origin <current-branch>\""
+  puts ""
   puts "gg r opt(<flags>)"
+  puts "Removes the configuration of the flags supplied. If no flags are" +
+  " supplied, the entire configuration is removed"
+  puts ""
   puts "gg ro"
+  puts "Shows the root of the repo. Equivalent of \"git rev-parse --show-toplevel\""
+  puts ""
   puts "gg [s|status]"
+  puts "Shows the current configuration for the repo."
+  puts ""
   puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
+  puts "Exactly the same as \"gg c\", but only shows the commitable message, without commiting."
+  puts ""
   puts "gg u"
+  puts "Shows the url of the repo. Equivalent of \"git remote get-url origin\""
   puts ""
 end
 
@@ -679,44 +753,61 @@ def showNotEnoughArgumentsError(flag, expected, len)
 end
 
 def newBranch(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  onlyAllowOneArg args, flag
   branch_name = args[1]
   puts "creating new branch: #{branch_name}"
   puts `git checkout -b #{branch_name}`
 end
 
 def checkoutBranch(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  onlyAllowOneArg args, flag
   branch_name = args[1]
   puts "checkout to branch #{branch_name}"
   puts `git checkout #{branch_name}`
 end
 
 def clone(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  onlyAllowOneArg args, flag
   repo = args[1]
   puts "cloning #{repo}"
   puts `git clone #{repo}`
 end
 
 def deleteBranch(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  onlyAllowOneArg args, flag
   branch = args[1]
   puts "deleting #{branch}"
   puts `git branch -d #{branch}`
 end
 
 def merge(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+  onlyAllowOneArg args, flag
   branch = args[1]
   currentBranch = getCurrentBranch()
   puts "merging #{branch} to #{currentBranch}"
   puts `git merge #{branch}`
+end
+
+def onlyAllowOneArg(args, flag)
+  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+end
+
+def protectedCommitPush(args, flag)
+  if not args.length >= 2 then showAtLeastArgumentsError(flag, 2, args.length) end
+  currentBranch = getCurrentBranch.strip
+  targetBranch = args[1]
+  puts "updating current branch: #{currentBranch}, pulling from #{targetBranch}"
+  puts `git pull origin #{targetBranch}`
+  shouldCommit = true
+  commit(args[2..-1], shouldCommit)
+  argsForPush = [flag, currentBranch]
+  push(argsForPush, flag, false, true)
+end
+
+def showAtLeastArgumentsError(flag, atLeastNum, actualNum)
+  puts "Error: #{flag} expects at least #{atLeastNum} arguments, but got #{actualNum}"
+  exit(128  )
 end
 
 def getCurrentBranch()
@@ -772,7 +863,7 @@ when "b"
 when "ba"
   puts getAllBranches()
 when "c"
-  commit(ARGV, index, "c", true)
+  commit(ARGV, "c", true)
 when "cb"
   # show current branch
   puts getCurrentBranch()
@@ -783,9 +874,9 @@ when "cn"
 when "-commands"
   printCommands()
 when "cp"
-  commit(ARGV, index, "cp", true)
+  commit(ARGV, "cp", true)
   # do not expect more arguments
-  push(ARGV, index, "cp", true, false)
+  push(ARGV, "cp", true, false)
 when "d"
   deleteBranch(ARGV, "d")
 when "di"
@@ -804,13 +895,15 @@ when "nb"
   newBranch(ARGV, "nb")
 when "p"
   # load from configuration unless it is specified
-  push(ARGV, index, "p", false, true)
+  push(ARGV, "p", false, true)
 when "pc"
   pushAtts(ARGV, index)
 when "pl"
   pull(ARGV, "pl")
 when "plc"
   pullAtts(ARGV)
+when "prcp"
+  protectedCommitPush(ARGV, "prcp")
 when "r"
   removeConfig(ARGV, index)
 when "ro"
@@ -819,7 +912,7 @@ when "status", "s"
   showStatus()
 when "sc"
   # do not commit, only show message
-  commit(ARGV, index, "c", false)
+  commit(ARGV, "c", false)
 when "u"
   puts getUrl()
 else
