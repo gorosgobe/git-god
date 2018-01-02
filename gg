@@ -26,13 +26,12 @@ PUSH_ORIGIN_PRIORITY = 2
 PULL_ORIGIN_PRIORITY = 3
 CURRENT_PRIORITY = 4
 
-def handleLog(args, index)
-  defaultDelimiter = true
+def handle_log(args, index)
   start_del = DEFAULT_START_LOG
   end_del = DEFAULT_END_LOG
 
-  if args.length == 1 then
-    showNoLogIncludedError()
+  if args.length == 1
+    show_no_log_included_error
   end
 
   args.each_with_index do |arg, i|
@@ -40,23 +39,23 @@ def handleLog(args, index)
     case arg_spl[0]
     when "-del"
 
-      if args.length == 2 then
-        showNoLogIncludedError()
+      if args.length == 2
+        show_no_log_included_error
       end
 
-      if arg_spl.length == 1 then
-        showDelimiterNotIncludedError()
+      if arg_spl.length == 1
+        show_delimiter_empty_error
       end
 
       # only one character provided, use for both
-      if arg_spl[1].length == 1 then
+      if arg_spl[1].length == 1
         log(args, i, arg_spl[1][0], arg_spl[1][0])
         return
       elsif arg_spl[1].length == 2 then
         log(args, i, arg_spl[1][0], arg_spl[1][1])
         return
       else
-        showInvalidDelimiterError()
+        show_invalid_delimiter_error
       end
     end
   end
@@ -64,22 +63,22 @@ def handleLog(args, index)
   log(args, index, start_del, end_del)
 end
 
-def showNoLogIncludedError()
+def show_no_log_included_error
   puts "Error: no logs have been included."
   exit(128)
 end
 
-def showDelimiterNotIncludedError()
+def show_delimiter_empty_error
   puts "Error: delimiter is empty or it is invalid."
-  toAddDelimiterTut()
+  to_add_delimiter_tut
 end
 
-def showInvalidDelimiterError()
+def show_invalid_delimiter_error
   puts "Error: invalid delimiter supplied for log."
-  toAddDelimiterTut()
+  to_add_delimiter_tut
 end
 
-def toAddDelimiterTut()
+def to_add_delimiter_tut
   puts "To add a delimiter, add flag -del=\"<delimiter>\". Note the double quotes."
   puts "<delimiter> must be one or two characters."
   exit(128)
@@ -87,41 +86,41 @@ end
 
 def log(args, index, start_del, end_del)
   # find the previous logged info
-  logUsers = ""
-  file = openConfigFile()
+  log_users = ""
+  file = open_config_file
 
   args[index + 1..-1].each do |arg|
     puts "Logged: #{arg}"
-    logUsers += start_del + arg + end_del
+    log_users += start_del + arg + end_del
   end
 
-  writeToFileOrOverwrite(LOGGED, "#{LOGGED}=#{logUsers}")
+  write_to_file_or_overwrite(LOGGED, "#{LOGGED}=#{log_users}")
   file.close
 end
 
-def isConfigFile(name)
+def is_config_file(name)
   File.basename(name) == CONFIG_FILE
 end
 
-def writeToFileOrOverwrite(flag, newValue)
+def write_to_file_or_overwrite(flag, new_value)
   tmp_file = Tempfile.new(TEMP_CONFIG)
-  file = openConfigFile()
-  hasBeenWritten = false
+  file = open_config_file
+  has_been_written = false
   begin
     file.each_line do |line|
-      if line.split("=")[0] == flag then
+      if line.split("=")[0] == flag
       # overwrite
-      hasBeenWritten = true
-      tmp_file.puts(newValue)
+      has_been_written = true
+      tmp_file.puts(new_value)
       else
       tmp_file.puts(line)
       end
     end
 
   # no line exists
-  if not hasBeenWritten then
-    tmp_file.puts(newValue)
-  end
+    unless has_been_written
+      tmp_file.puts(new_value)
+    end
   tmp_file.close
   # change the name and overwrite
   FileUtils.mv(tmp_file, file)
@@ -133,16 +132,16 @@ ensure
 end
 end
 
-def writeToFile(file_name, value)
-  #assumes file is not opened
+def write_to_file(file_name, value)
+  # assumes file is not opened
   file = File.open(file_name, "a")
   file.puts(value)
   file.close
 end
 
-def deleteLineWithKey(key)
+def delete_line_with_key(key)
   tmp_file = Tempfile.new(TEMP_CONFIG)
-  file = openConfigFile()
+  file = open_config_file
   begin
     file.each_line do |line|
       next if line.split("=")[0] == key
@@ -159,41 +158,41 @@ def deleteLineWithKey(key)
   end
 end
 
-def existsConfigFile()
-Find.find(Dir.pwd) do |e|
+def exists_config_file
+  Find.find(Dir.pwd) do |e|
   next if File.directory?(e)
-  if isConfigFile(e) then return true end
+  return true if is_config_file(e)
 end
 false
 end
 
-def removeConfig(args, index)
-  configFile = openConfigFile()
-  shouldDeleteCurrentIssue = false
-  if args.length == 1 then
+def remove_config(args, index)
+  config_file = open_config_file
+  should_delete_current_issue = false
+  if args.length == 1
     # flag is only -r, delete whole configuration
   if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
   else
     # delete specific attributes
     args[index + 1..-1].each do |flag|
-      key = getKeyFromFlag(flag)
+      key = get_key_from_flag(flag)
       # would delete all issues in case key is issue
-      if key == ISSUE then shouldDeleteCurrentIssue = true end
-      file = deleteLineWithKey(key)
-      configFile = file
+      if key == ISSUE then should_delete_current_issue = true end
+      file = delete_line_with_key(key)
+      config_file = file
     end
   end
 
   # if all issues are deleted then also delete the current issue symbol
-  if shouldDeleteCurrentIssue then deleteLineWithKey(CURRENT_ISSUE) end
-  configFile.close
+  if should_delete_current_issue then delete_line_with_key(CURRENT_ISSUE) end
+  config_file.close
 end
 
-def showStatus()
+def show_status
   info = Hash.new
   issues = Set.new
-  configFile = openConfigFile()
-  configFile.each_line do |line|
+  config_file = open_config_file
+  config_file.each_line do |line|
     line_array = line.split("=")
     case line_array[0]
     when LOGGED
@@ -211,7 +210,7 @@ def showStatus()
     end
   end
 
-  configFile.close
+  config_file.close
 
   info = Hash[info.sort]
   info.each do |k, v|
@@ -233,7 +232,7 @@ def showStatus()
   if info[CURRENT_PRIORITY] == nil then puts "no current issues" end
 
   issues.each do |issue_line|
-    if issue_line.length == 1 then
+    if issue_line.length == 1
       puts "issue: #{issue_line[0]}"
     else
       puts "issue: #{issue_line[0]}, alias: #{issue_line[1]}"
@@ -242,76 +241,76 @@ def showStatus()
 
 end
 
-def getValues()
+def get_values
   info = Hash.new
   issues = Set.new
-  configFile = openConfigFile()
-  configFile.each_line do |line|
+  config_file = open_config_file
+  config_file.each_line do |line|
     line_array = line.strip.split("=")
-    if line_array[0] == ISSUE then
+    if line_array[0] == ISSUE
       # case when it is an issue, need to track name and alias
-      aliasForName = ""
-      if line_array[2] != nil then aliasForName = line_array[2] end
-      issues << line_array[1] + "=" + aliasForName
+      alias_for_name = ""
+      if line_array[2] != nil then alias_for_name = line_array[2] end
+      issues << line_array[1] + "=" + alias_for_name
     else
     info[line_array[0]] = line_array[1]
     end
   end
-  return info, issues
+  [info, issues]
 end
 
-def openConfigFile()
+def open_config_file
   File.open(CONFIG_FILE, "r+")
 end
 
-def commit(args, flag, shouldCommit)
-  values, issues = getValues()
+def commit(args, flag, should_commit)
+  values, issues = get_values
 
-  message = generateMessageForCommit(values, issues, args, flag, shouldCommit)
+  message = generate_msg_for_commit(values, args, flag, should_commit)
   # if the flag is set, commit, otherwise just print the commit
-  if shouldCommit then
-    addAndCommit(values, message)
+  if should_commit
+    add_and_commit(values, message)
   else
     puts message
   end
 end
 
-def generateMessageForCommit(values, issues, args, flag, shouldCommit)
+def generate_msg_for_commit(values, args, flag, should_commit)
 
-  if shouldCommit and args.length < 2 then showInvalidSizeCommit(flag) end
+  if should_commit and args.length < 2 then show_invalid_size_commit(flag) end
 
   # if there are enough arguments, check that the first one to the commit flag
   # is not a flag
-  if args.length > 1 and isFlag(args[1]) then
-    showFlagExpectingMessageError(flag, args[1])
+  if args.length > 1 and is_flag(args[1])
+    show_flag_expect_message_error(flag, args[1])
   end
 
-  logUsers = values[LOGGED]
+  log_users = values[LOGGED]
   issue = values[CURRENT_ISSUE]
 
   message = ""
 
-  if isDefined(logUsers) then
-    message += logUsers
+  if is_defined(log_users)
+    message += log_users
   end
 
-  if isDefined(issue) then
+  if is_defined(issue)
     message += ISSUE_DELIMITER + issue
   end
 
   message += " " + args[1].to_s
 
-  if args.length > 2 then
+  if args.length > 2
     # commit message might have additional flags
     # starting from third argument
-    message = additionalFlagsToCommit(args, message, 2, flag)
+    message = additional_flags_to_commit(args, message, 2, flag)
   end
   message
 end
 
-def addAndCommit(values, message)
-  addAtts = values[ADD]
-  if isDefined(addAtts) then
+def add_and_commit(values, message)
+  add_atts = values[ADD]
+  if is_defined(add_atts)
     puts "adding all"
     puts `git add -A`
   end
@@ -320,7 +319,7 @@ def addAndCommit(values, message)
   puts `git commit -m \"#{message}\"`
 end
 
-def additionalFlagsToCommit(args, message, index, flag)
+def additional_flags_to_commit(args, message, index, flag)
   # starting from the third argument
   case args[index]
   when "-cl"
@@ -330,181 +329,181 @@ def additionalFlagsToCommit(args, message, index, flag)
   end
 end
 
-def closes(args, message, indexOnEntry, flag)
+def closes(args, message, index_on_entry, flag)
   # if the arguments are less than the given index plus one argument, throw an error
-  addAppendingFlag(args, message, indexOnEntry, flag, CLOSES, ISSUE_MENTION)
+  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION)
 end
 
 
-def contributes(args, message, indexOnEntry, flag)
-  addAppendingFlag(args, message, indexOnEntry, flag, CONTRIBUTORS, MENTION)
+def contributes(args, message, index_on_entry, flag)
+  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION)
 end
 
-def addAppendingFlag(args, message, indexOnEntry, flag, preceding, beforeRef)
-  if args.length <= indexOnEntry + 1 then showInvalidSizeCommit(flag) end
+def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref)
+  if args.length <= index_on_entry + 1 then show_invalid_size_commit(flag) end
   refs = Array.new
   # start at argument
-  index = indexOnEntry + 1
-  while index < args.length and not isFlag(args[index]) do
+  index = index_on_entry + 1
+  while index < args.length and not is_flag(args[index]) do
     refs << args[index]
     index += 1
   end
-  refs = addToStart(refs, beforeRef)
+  refs = add_to_start(refs, before_ref)
   refs = refs.join(", ")
   stripped_msg = args[1].strip
   # if the last character is a full stop or the message is empty then dont add
   # another full stop
 
   totalmsg_strip = message.strip
-  if totalmsg_strip[totalmsg_strip.length - 1] == '.' or stripped_msg.length == 0 then
+  if totalmsg_strip[totalmsg_strip.length - 1] == '.' or stripped_msg.length == 0
     message = message + " #{preceding} #{refs}."
   else
     message = message + ". #{preceding} #{refs}."
   end
-  if index < args.length then
-    message = additionalFlagsToCommit(args, message, index, flag)
+  if index < args.length
+    message = additional_flags_to_commit(args, message, index, flag)
   end
   message
 end
 
-def addToStart(refs, beforeRef)
+def add_to_start(refs, before_ref)
   result = Array.new
   refs.each do |ref|
-    result << beforeRef + ref
+    result << before_ref + ref
   end
   result
 end
 
-def isFlag(str)
+def is_flag(str)
   str[0] == '-'
 end
 
-def showFlagExpectingMessageError(flag, value)
+def show_flag_expect_message_error(flag, value)
   puts "Error: #{flag} expects a message, but got \"#{value}\"."
-  expectedCommit(flag)
+  expected_commit(flag)
 end
 
-def expectedCommit(flag)
+def expected_commit(flag)
   puts "Expected: gg #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
   exit(128)
 end
 
-def push(args, flag, alwaysLoadFromConfiguration, takesLessThanTwoArgs)
+def push(args, flag, load_configuration, less_than_two_args)
 
-  if takesLessThanTwoArgs and args.length > 2 then
-    showTooManyArgumentsError(flag, 1, args.length - 1)
+  if less_than_two_args and args.length > 2
+    show_too_many_args_error(flag, 1, args.length - 1)
   end
 
-  values, issues = getValues()
+  values, _ = get_values
   # if always load from configuration then it is a -p from -cp
-  if alwaysLoadFromConfiguration then
-    pushAtts = values[PUSH_ORIGIN]
+  if load_configuration
+    push_atts = values[PUSH_ORIGIN]
   else
   # if we do not need to load from configuration, and there is a branch push to
   # that branch. If there is not a branch, then it will be nil, and will default
   # to master
-    if args.length == 2 then
-      pushAtts = args[1]
+    if args.length == 2
+      push_atts = args[1]
     else
       # there is only one argument, get from configuration
       # if configuration is nil then will default to master below
-      pushAtts = values[PUSH_ORIGIN]
+      push_atts = values[PUSH_ORIGIN]
     end
   end
 
-  if not isDefined(pushAtts) then
+  if not is_defined(push_atts)
     puts "pushing to master"
     puts `git push origin master`
   else
-    puts "pushing to #{pushAtts}"
-    puts `git push origin #{pushAtts}`
+    puts "pushing to #{push_atts}"
+    puts `git push origin #{push_atts}`
   end
 end
 
-def pushAtts(args, index)
-  if args.length == 1 then
-    showPushAttsWithNoAttsError()
+def push_atts(args)
+  if args.length == 1
+    show_push_atts_no_atts_error
   end
 
   args[1..-1].each do |value|
     value_spl = value.split("=")
-    if value_spl.length == 1 then showPushAttsWithNoAttsError end
+    if value_spl.length == 1 then show_push_atts_no_atts_error end
     case value_spl[0]
     when "-o"
-      writeToFileOrOverwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+      write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
     else
-      unsupportedCommand(value_spl[0])
+      unsupported_command(value_spl[0])
     end
   end
 end
 
 def pull(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
+  if args.length > 2 then show_too_many_args_error(flag, 1, args.length - 1) end
 
-  values, issues = getValues()
+  values, _ = get_values
 
-  if args.length == 1 then
+  if args.length == 1
     # grab pull origin from configuration
-    pullOrigin = values[PULL_ORIGIN]
+    pull_origin = values[PULL_ORIGIN]
   else
     # length must be two, therefore use the argument given as origin
-    pullOrigin = args[1]
+    pull_origin = args[1]
   end
 
-  if not isDefined(pullOrigin) then
+  unless is_defined(pull_origin)
     # if not defined in configuration file and not given in argument to flag
     # then choose master by default
-    pullOrigin = "master"
+    pull_origin = "master"
   end
 
-  puts "pulling from #{pullOrigin}"
-  puts `git pull origin #{pullOrigin}`
+  puts "pulling from #{pull_origin}"
+  puts `git pull origin #{pull_origin}`
 end
 
-def pullAtts(args)
-  if args.length == 1 then
-    showPullAttsWithNoAttsError()
+def pull_atts(args)
+  if args.length == 1
+    show_pull_atts_no_atts_error
   end
 
   args[1..-1].each do |value|
     value_spl = value.split("=")
-    if value_spl.length == 1 then showPullAttsWithNoAttsError end
+    if value_spl.length == 1 then show_pull_atts_no_atts_error end
     case value_spl[0]
     when "-o"
-      writeToFileOrOverwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
+      write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
     else
-      unsupportedCommand(value_spl[0])
+      unsupported_command(value_spl[0])
     end
   end
 end
 
-def showInvalidSizeCommit(callingFlag)
+def show_invalid_size_commit(calling_flag)
   puts "Error: trying to commit but incorrect number of arguments supplied."
-  expectedCommit(callingFlag)
+  expected_commit(calling_flag)
 end
 
-def showPushAttsWithNoAttsError()
+def show_push_atts_no_atts_error
   puts "Error: trying to add a configuration for push but no attributes are found."
   puts "To add a configuration for push, use \"gg pc -o=<branch-name>\"."
   exit(128)
 end
 
-def showPullAttsWithNoAttsError()
+def show_pull_atts_no_atts_error
   puts "Error: trying to add a configuration for pull but no attributes are found."
   puts "To add a configuration for pull, use \"gg pl -o=<branch-name>\"."
   exit(128)
 end
 
-def isDefined(val)
+def is_defined(val)
   val != nil
 end
 
-def alwaysAddAll()
-  writeToFileOrOverwrite(ADD, "#{ADD}=#{ALL}")
+def always_add_all
+  write_to_file_or_overwrite(ADD, "#{ADD}=#{ALL}")
 end
 
-def getKeyFromFlag(flag)
-  if not isConfigurable(flag) then
+def get_key_from_flag(flag)
+  unless isConfigurable(flag)
     puts "Error: configuration for #{flag} cannot be removed."
     puts "The flag #{flag} is non configurable or does not exist."
     exit(128)
@@ -528,14 +527,16 @@ def isConfigurable(flag)
 end
 
 def issue(args, index)
-  if not correctIssueArgLength(args) then showIncorrectIssueArgLengthError(args.length) end
+  unless correct_issue_arg_length(args)
+    show_no_name_or_alias_error
+  end
   # if length is one, then we want to commit without issue
-  if args.length == 1 then
-    deleteLineWithKey(CURRENT_ISSUE)
+  if args.length == 1
+    delete_line_with_key(CURRENT_ISSUE)
     exit(0)
   end
   name = ""
-  aliasForName = nil
+  alias_for_name = nil
 
   args[index + 1..-1].each do |arg|
     arg_spl = arg.split("=")
@@ -543,84 +544,84 @@ def issue(args, index)
     when "-name", "-n"
       name = arg_spl[1]
     when "-alias", "-a"
-      aliasForName = arg_spl[1]
+      alias_for_name = arg_spl[1]
     else
-      values, issues = getValues()
-      if arg_spl[0][1..-1] == values[CURRENT_ISSUE] then
+      values, issues = get_values
+      if arg_spl[0][1..-1] == values[CURRENT_ISSUE]
         exit(0)
       end
       # it must be an alias or name
-      name = getNameFromAlias(arg_spl[0][1..-1].strip)
-      if name == nil then showErrorIssueDoesNotExist(arg_spl[0][1..-1]) end
-      writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+      name = get_name_from_alias(arg_spl[0][1..-1].strip)
+      if name == nil then show_error_issue_not_exist(arg_spl[0][1..-1]) end
+      write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
       puts "Current issue: #{name}"
       exit(0) # job is done, no need to add any issues
     end
   end
 
-  if name == nil then showNoNameForIssueError end
+  if name == nil then show_no_name_for_issue_error end
 
-  # writeToFile leaves configFile closed
-  if aliasForName == nil then
-    writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
-    writeToFile(CONFIG_FILE, "#{ISSUE}=#{name}")
+  # writeToFile leaves config_file closed
+  if alias_for_name == nil
+    write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+    write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
   else
-    writeToFileOrOverwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{aliasForName}")
-    writeToFile(CONFIG_FILE, "#{ISSUE}=#{name}=#{aliasForName}")
+    write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{alias_for_name}")
+    write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}=#{alias_for_name}")
   end
 
 end
 
-def getNameFromAlias(aliasOrName)
-  configFile = openConfigFile()
+def get_name_from_alias(alias_or_name)
+  config_file = open_config_file
   begin
-    configFile.each_line do |line|
+    config_file.each_line do |line|
       line_spl = line.strip.split("=")
       next if line_spl[0] != ISSUE
       # line is an issue
-      if aliasOrName == line_spl[1] or aliasOrName == line_spl[2] then
+      if alias_or_name == line_spl[1] or alias_or_name == line_spl[2]
         return line_spl[1]
       end
     end
     # if not found return nil
     nil
   ensure
-    configFile.close
+    config_file.close
   end
 end
 
-def showErrorIssueDoesNotExist(name)
+def show_error_issue_not_exist(name)
   puts "Error: issue with name #{name} or alias #{name} does not exist."
-  expectedForIssue()
+  expected_for_issue
 end
 
-def correctIssueArgLength(args)
+def correct_issue_arg_length(args)
   args.length >= 1 and args.length <= 3
 end
 
-def showNoNameForIssueError()
+def show_no_name_for_issue_error
   puts "Error: no name was supplied for a new issue."
-  expectedForIssue()
+  expected_for_issue
 end
 
-def showIncorrectIssueArgLengthError(len)
+def show_no_name_or_alias_error
   puts "Error: Creating a new issue expects a name and an optional alias."
-  expectedForIssue()
+  expected_for_issue
 end
 
-def expectedForIssue()
+def expected_for_issue
   puts "Expected: \"gg i -name=<issue-name>\" or \"gg i -name=<issue-name> -alias=<alias>\"."
   puts "Alternatively: \"gg i -n=<issue-name>\" or \"gg i -n=<issue-name> -a=<alias>\"."
   puts "To set the current issue, use \"gg i -<alias or name of issue>\"."
   exit(128)
 end
 
-def unsupportedCommand(arg)
+def unsupported_command(arg)
   puts "Error: unexpected command \"#{arg}\" found."
   puts "To view a full list of all arguments to gg, run gg -commands."
 end
 
-def printCommands()
+def print_commands
   puts ""
   puts "List of commands in git-god:"
   puts "Note: opt(x) means x is optional."
@@ -729,192 +730,194 @@ def printCommands()
   puts ""
 end
 
-def showNotGitRepoError()
+def show_not_git_repo_error
   puts "Error: current directory is not a git repository."
   exit(128)
 end
 
-def checkIfIsGitRepo
+def check_if_git_repo
   # suppressing the output of git status
   out = system "git", "status", :out => File::NULL, :err => File::NULL
-  if $?.exitstatus != 0 then
-    showNotGitRepoError()
+  if $?.exitstatus != 0
+    show_not_git_repo_error
   end
 end
 
-def showTooManyArgumentsError(flag, expected, len)
+def show_too_many_args_error(flag, expected, len)
   puts "Error: #{flag} received too many arguments. Expected #{expected}, got #{len}."
   exit(128)
 end
 
-def showNotEnoughArgumentsError(flag, expected, len)
+def show_not_enough_args_error(flag, expected, len)
   puts "Error: #{flag} did not receive enough arguments. Expected #{expected}, got #{len}."
   exit(128)
 end
 
-def newBranch(args, flag)
-  onlyAllowOneArg args, flag
+def new_branch(args, flag)
+  only_allow_one_arg args, flag
   branch_name = args[1]
   puts "creating new branch: #{branch_name}"
   puts `git checkout -b #{branch_name}`
 end
 
-def checkoutBranch(args, flag)
-  onlyAllowOneArg args, flag
+def checkout_branch(args, flag)
+  only_allow_one_arg args, flag
   branch_name = args[1]
   puts "checkout to branch #{branch_name}"
   puts `git checkout #{branch_name}`
 end
 
 def clone(args, flag)
-  onlyAllowOneArg args, flag
+  only_allow_one_arg args, flag
   repo = args[1]
   puts "cloning #{repo}"
   puts `git clone #{repo}`
 end
 
-def deleteBranch(args, flag)
-  onlyAllowOneArg args, flag
+def delete_branch(args, flag)
+  only_allow_one_arg args, flag
   branch = args[1]
   puts "deleting #{branch}"
   puts `git branch -d #{branch}`
 end
 
 def merge(args, flag)
-  onlyAllowOneArg args, flag
+  only_allow_one_arg args, flag
   branch = args[1]
-  currentBranch = getCurrentBranch()
-  puts "merging #{branch} to #{currentBranch}"
+  current_branch = get_current_branch
+  puts "merging #{branch} to #{current_branch}"
   puts `git merge #{branch}`
 end
 
-def onlyAllowOneArg(args, flag)
-  if args.length > 2 then showTooManyArgumentsError(flag, 1, args.length - 1) end
-  if args.length == 1 then showNotEnoughArgumentsError(flag, 1, 0) end
+def only_allow_one_arg(args, flag)
+  if args.length > 2 then show_too_many_args_error(flag, 1, args.length - 1) end
+  if args.length == 1 then show_not_enough_args_error(flag, 1, 0) end
 end
 
-def protectedCommitPush(args, flag)
-  if not args.length >= 2 then showAtLeastArgumentsError(flag, 2, args.length) end
-  currentBranch = getCurrentBranch.strip
-  targetBranch = args[1]
-  puts "updating current branch: #{currentBranch}, pulling from #{targetBranch}"
-  puts `git pull origin #{targetBranch}`
-  shouldCommit = true
-  commit(args[2..-1], shouldCommit)
-  argsForPush = [flag, currentBranch]
-  push(argsForPush, flag, false, true)
+def protected_commit_push(args, flag)
+  unless args.length >= 2
+    show_at_least_args_error(flag, 2, args.length)
+  end
+  current_branch = get_current_branch.strip
+  target_branch = args[1]
+  puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
+  puts `git pull origin #{target_branch}`
+  should_commit = true
+  commit(args[2..-1], flag, should_commit)
+  args_for_push = [flag, current_branch]
+  push(args_for_push, flag, false, true)
 end
 
-def showAtLeastArgumentsError(flag, atLeastNum, actualNum)
-  puts "Error: #{flag} expects at least #{atLeastNum} arguments, but got #{actualNum}"
+def show_at_least_args_error(flag, at_least_num, actual_num)
+  puts "Error: #{flag} expects at least #{at_least_num} arguments, but got #{actual_num}"
   exit(128  )
 end
 
-def getCurrentBranch()
+def get_current_branch
   `git rev-parse --abbrev-ref HEAD`
 end
 
-def getTopLevel()
+def get_top_level
   `git rev-parse --show-toplevel`
 end
 
-def getUrl()
+def get_url
   `git remote get-url origin`
 end
 
-def getStatus()
+def get_status
   `git status`
 end
 
-def getLocalBranches()
+def get_local_branches
   `git branch`
 end
 
-def getAllBranches()
+def get_all_branches
   `git branch -a`
 end
 
-def fetchAll()
+def fetch_all
   `git fetch --all`
 end
 
-def getDiff()
+def get_diff
   `git diff`
 end
 
 # check if it is a git repository
-checkIfIsGitRepo()
-topLevel = getTopLevel()
-CONFIG_FILE = File.join(topLevel.strip, CONFIG_FILE_EXTENSION)
+check_if_git_repo
+top_level = get_top_level
+CONFIG_FILE = File.join(top_level.strip, CONFIG_FILE_EXTENSION)
 
 # create configuration file if it doesnt exist
-if not File.exist?(CONFIG_FILE) then
-  configFile = File.open(CONFIG_FILE, "w+")
-  configFile.close
+unless File.exist?(CONFIG_FILE)
+  config_file = File.open(CONFIG_FILE, "w+")
+  config_file.close
 end
 
 arg = ARGV[0]
 index = 0
 case arg
 when "a"
-  alwaysAddAll()
+  always_add_all
 when "b"
-  puts getLocalBranches()
+  puts get_local_branches
 when "ba"
-  puts getAllBranches()
+  puts get_all_branches
 when "c"
   commit(ARGV, "c", true)
 when "cb"
   # show current branch
-  puts getCurrentBranch()
+  puts get_current_branch
 when "ch"
-  checkoutBranch(ARGV, "ch")
+  checkout_branch(ARGV, "ch")
 when "cn"
   clone(ARGV, "cn")
 when "-commands"
-  printCommands()
+  print_commands
 when "cp"
   commit(ARGV, "cp", true)
   # do not expect more arguments
   push(ARGV, "cp", true, false)
 when "d"
-  deleteBranch(ARGV, "d")
+  delete_branch(ARGV, "d")
 when "di"
-  puts getDiff()
+  puts get_diff
 when "fa"
-  puts fetchAll()
+  puts fetch_all
 when "gs"
-  puts getStatus()
+  puts get_status
 when "i"
   issue(ARGV, index)
 when "l"
-  handleLog(ARGV, index)
+  handle_log(ARGV, index)
 when "m"
   merge(ARGV, "m")
 when "nb"
-  newBranch(ARGV, "nb")
+  new_branch(ARGV, "nb")
 when "p"
   # load from configuration unless it is specified
   push(ARGV, "p", false, true)
 when "pc"
-  pushAtts(ARGV, index)
+  push_atts(ARGV)
 when "pl"
   pull(ARGV, "pl")
 when "plc"
-  pullAtts(ARGV)
+  pull_atts(ARGV)
 when "prcp"
-  protectedCommitPush(ARGV, "prcp")
+  protected_commit_push(ARGV, "prcp")
 when "r"
-  removeConfig(ARGV, index)
+  remove_config(ARGV, index)
 when "ro"
-  puts getTopLevel()
+  puts get_top_level
 when "status", "s"
-  showStatus()
+  show_status
 when "sc"
   # do not commit, only show message
   commit(ARGV, "c", false)
 when "u"
-  puts getUrl()
+  puts get_url
 else
-  unsupportedCommand(arg)
+  unsupported_command(arg)
 end
