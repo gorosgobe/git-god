@@ -1,6 +1,8 @@
 # git-god
 
-A script that allows to save configurations for easier, more meaningful and faster comitting.
+A script that allows to save configurations for easier, more meaningful, faster and safer comitting and pushing. 
+
+git-god allows to set suites of scripts running before every push i.e. preventing pushes that break test cases. It also provides utilities to configure pulling and pushing to/from branches, commit messages that are clearer and faster, and gives shortcuts for frequently used git commands.
 
 # Install
 
@@ -14,6 +16,8 @@ alias g='gg'
 ```
 
 # Features
+The following are the features currently supported by git-god.
+
 Commit the current message and push.
 ```
 gg c "message"  # commits formatting with the configuration
