@@ -742,9 +742,9 @@ def print_commands
   puts "If you do not know what this is, how did you get here?!"
   puts ""
   puts "gg cp \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "Commits and pushes. Arguments same as \"gg c\" above. Gets pushing "
-  + "branch from configuration. If it has not been configured, then defaults to "
-  + "master."
+  puts "Commits and pushes. Arguments same as \"gg c\" above. Gets pushing " +
+         "branch from configuration. If it has not been configured, then defaults to " +
+         "master."
   puts "Equivalent of \"git commit <formatted-message-from-args>\""
   puts "              \"git push origin <config-branch-or-master>"
   puts ""
@@ -752,8 +752,8 @@ def print_commands
   puts "Deletes the given branch. Equivalent of \"git branch -d branch-name\""
   puts ""
   puts "gg di"
-  puts "Shows the difference between the current state of the repo versus the "
-  + "last commit. Equivalent of \"git diff\""
+  puts "Shows the difference between the current state of the repo versus the " +
+         "last commit. Equivalent of \"git diff\""
   puts ""
   puts "gg fa"
   puts "Equivalent of \"git fetch --all\""
@@ -763,15 +763,15 @@ def print_commands
   puts ""
   puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
   puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
-  puts "Adds an issue. To add a new issue, the name attribute must be specified. "
-  + "Alias is not required. To set the current issue to be a certain issue defined "
-  + "before, use \"gg i -<alias-or-name-given-to-issue>\". To delete the current "
-  + "issue, use \"gg i\" with no arguments"
+  puts "Adds an issue. To add a new issue, the name attribute must be specified. " +
+         "Alias is not required. To set the current issue to be a certain issue defined " +
+         "before, use \"gg i -<alias-or-name-given-to-issue>\". To delete the current " +
+         "issue, use \"gg i\" with no arguments"
   puts ""
   puts "gg l opt([-del=<delimiter>]) [<logs>]"
-  puts "Sets the log to be the supplied arguments. An extra argument can be "
-  + "added to specify the delimiter to use for these logs. The delimiter must be "
-  + "one or two characters long."
+  puts "Sets the log to be the supplied arguments. An extra argument can be " +
+         "added to specify the delimiter to use for these logs. The delimiter must be " +
+         "one or two characters long."
   puts ""
   puts "gg m <branch-name>"
   puts "Merges the branch supplied to the current branch. Equivalent of \"git merge\""
@@ -783,17 +783,16 @@ def print_commands
   puts "Opens the configuration file #{CONFIG_FILE_EXTENSION} in VIM. Modify at own risk."
   puts ""
   puts "gg p opt(<branch-name>)"
-  puts "Pushes. If the branch name is supplied, pushes to that branch. If not, "
-  + "it will push to the branch configured. If no branch has been configured, will "
-  + "default to master"
+  puts "Pushes. If the branch name is supplied, pushes to that branch. If not, " +
+         "it will push to the branch configured. If no branch has been configured, will " +
+         "default to master"
   puts ""
   puts "gg pc -o=<branch-name>"
   puts "Sets the configuration for pushing. Attribute origin must be supplied."
   puts ""
   puts "gg pl opt(<branch-name>)"
-  puts "Pulls from branch. If branch has not been supplied, pulls from the "
-  + "branch configured. If no branch has been configured, then it defaults to "
-   + "master."
+  puts "Pulls from branch. If branch has not been supplied, pulls from the " +
+         "branch configured. If no branch has been configured, then it defaults to master."
   puts ""
   puts "gg plc -o=<branch-name>"
   puts "Sets the configuration for pulling. Attribute origin must be supplied."
@@ -818,8 +817,8 @@ def print_commands
   puts "Exactly the same as \"gg c\", but only shows the commitable message, without commiting."
   puts ""
   puts "gg [scr|script] <script>"
-  puts "Sets the given script/command to run before a push. Scripts/commands must be given relative to the root "
-  + "directory of the git " + "repository. Example: \"gg scr ls -a\"."
+  puts "Sets the given script/command to run before a push. Scripts/commands must be given relative to the root " +
+         "directory of the git repository. Example: \"gg scr ls -a\"."
   puts ""
   puts "gg u"
   puts "Shows the url of the repo. Equivalent of \"git remote get-url origin\""
