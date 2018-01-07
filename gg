@@ -333,11 +333,11 @@ def add_and_commit(values, message)
   add_atts = values[ADD]
   if defined_val?(add_atts)
     puts "adding all"
-    puts `git add -A`
+    system "git add -A"
   end
   puts "commiting..."
   puts "\"#{message}\""
-  puts `git commit -m \"#{message}\"`
+  system "git commit -m \"#{message}\""
 end
 
 def additional_flags_to_commit(args, message, index, flag)
@@ -456,10 +456,10 @@ def push(args, flag, load_configuration, less_than_two_args)
   # push after all scripts have run and exit code was success
   if not defined_val?(push_attributes)
     puts "pushing to master"
-    puts `git push origin master`
+    system "git push origin master"
   else
     puts "pushing to #{push_attributes}"
-    puts `git push origin #{push_attributes}`
+    system "git push origin #{push_attributes}"
   end
 end
 
@@ -484,12 +484,12 @@ def execute_script(script)
     Dir.chdir(get_top_level.strip) do
       # if root contains script execute
       return unless directory_contains? script
-      puts `#{script}`
+      system script
     end
   else
     # it is a normal command, execute normally
     # prevent errors from ruby when command is malformed
-    system(script)
+    system script
   end
 
 end
@@ -544,7 +544,7 @@ def pull(args, flag)
   end
 
   puts "pulling from #{pull_origin}"
-  puts `git pull origin #{pull_origin}`
+  system "git pull origin #{pull_origin}"
 end
 
 def pull_atts(args)
@@ -852,28 +852,28 @@ def new_branch(args, flag)
   only_allow_one_arg args, flag
   branch_name = args[1]
   puts "creating new branch: #{branch_name}"
-  puts `git checkout -b #{branch_name}`
+  system "git checkout -b #{branch_name}"
 end
 
 def checkout_branch(args, flag)
   only_allow_one_arg args, flag
   branch_name = args[1]
   puts "checkout to branch #{branch_name}"
-  puts `git checkout #{branch_name}`
+  system "git checkout #{branch_name}"
 end
 
 def clone(args, flag)
   only_allow_one_arg args, flag
   repo = args[1]
   puts "cloning #{repo}"
-  puts `git clone #{repo}`
+  system "git clone #{repo}"
 end
 
 def delete_branch(args, flag)
   only_allow_one_arg args, flag
   branch = args[1]
   puts "deleting #{branch}"
-  puts `git branch -d #{branch}`
+  system "git branch -d #{branch}"
 end
 
 def merge(args, flag)
@@ -881,7 +881,7 @@ def merge(args, flag)
   branch = args[1]
   current_branch = get_current_branch
   puts "merging #{branch} to #{current_branch}"
-  puts `git merge #{branch}`
+  system "git merge #{branch}"
 end
 
 def only_allow_one_arg(args, flag)
@@ -896,7 +896,7 @@ def protected_commit_push(args, flag)
   current_branch = get_current_branch.strip
   target_branch = args[1]
   puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
-  puts `git pull origin #{target_branch}`
+  system "git pull origin #{target_branch}"
   should_commit = true
   commit(args[2..-1], flag, should_commit)
   args_for_push = [flag, current_branch]
@@ -912,32 +912,33 @@ def get_current_branch
   `git rev-parse --abbrev-ref HEAD`
 end
 
+# uses back ticks as it is used throughout the program, not only printed
 def get_top_level
   `git rev-parse --show-toplevel`
 end
 
 def get_url
-  `git remote get-url origin`
+  system "git remote get-url origin"
 end
 
 def get_status
-  `git status`
+  system "git status"
 end
 
 def get_local_branches
-  `git branch`
+  system "git branch"
 end
 
 def get_all_branches
-  `git branch -a`
+  system "git branch -a"
 end
 
 def fetch_all
-  `git fetch --all`
+  system "git fetch --all"
 end
 
 def get_diff
-  `git diff`
+  system "git diff"
 end
 
 
@@ -958,9 +959,9 @@ case arg
   when "a"
     always_add_all
   when "b"
-    puts get_local_branches
+    get_local_branches
   when "ba"
-    puts get_all_branches
+    get_all_branches
   when "c"
     commit(ARGV, "c", true)
   when "cb"
@@ -979,11 +980,11 @@ case arg
   when "d"
     delete_branch(ARGV, "d")
   when "di"
-    puts get_diff
+    get_diff
   when "fa"
-    puts fetch_all
+    fetch_all
   when "gs"
-    puts get_status
+    get_status
   when "i"
     issue(ARGV, index)
   when "l"
@@ -993,7 +994,7 @@ case arg
   when "nb"
     new_branch(ARGV, "nb")
   when "op"
-    system("vim #{CONFIG_FILE}")
+    system "vim #{CONFIG_FILE}"
   when "p"
     # load from configuration unless it is specified
     push(ARGV, "p", false, true)
@@ -1017,7 +1018,7 @@ case arg
   when "script", "scr"
     script(ARGV, "script/scr")
   when "u"
-    puts get_url
+    get_url
   else
     unsupported_command(arg)
 end
