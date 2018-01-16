@@ -27,6 +27,7 @@ ISSUE_MENTION = "#"
 PULL_ORIGIN = "pull_origin"
 RUN_SCRIPT = "run_script"
 MASTER = "master"
+COMMA = ", "
 EXIT_SUCCESS = 0
 
 LOG_PRIORITY = 0
@@ -271,15 +272,15 @@ end
 
 def closes(args, message, index_on_entry, flag)
   # if the arguments are less than the given index plus one argument, throw an error
-  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION)
+  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION, COMMA)
 end
 
 
 def contributes(args, message, index_on_entry, flag)
-  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION)
+  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA)
 end
 
-def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref)
+def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join)
   if args.length <= index_on_entry + 1 then Errors.show_invalid_size_commit(flag) end
   refs = Array.new
   # start at argument
@@ -289,13 +290,13 @@ def add_appending_flag(args, message, index_on_entry, flag, preceding, before_re
     index += 1
   end
   refs = add_to_start(refs, before_ref)
-  refs = refs.join(", ")
+  refs = refs.join(join)
   stripped_msg = args[1].strip
   # if the last character is a full stop or the message is empty then dont add
   # another full stop
 
-  totalmsg_strip = message.strip
-  if totalmsg_strip[totalmsg_strip.length - 1] == '.' or stripped_msg.length == 0
+  total_msg_strip = message.strip
+  if total_msg_strip[total_msg_strip.length - 1] == '.' or stripped_msg.length == 0
     message = message + " #{preceding} #{refs}."
   else
     message = message + ". #{preceding} #{refs}."
