@@ -217,6 +217,29 @@ def commit(args, flag, should_commit)
   end
 end
 
+def add_issue_to_msg(issue, message)
+  if defined_val?(issue)
+    message += "(" + ISSUE_DELIMITER + issue.strip + ") "
+  end
+  message
+end
+
+def add_log_users_to_msg(log_users, message)
+  if defined_val?(log_users)
+    message += log_users
+  end
+  message
+end
+
+def add_issue_and_log(values)
+  log_users = values[LOGGED]
+  issue = values[CURRENT_ISSUE]
+
+  message = ""
+  message = add_issue_to_msg(issue, message)
+  add_log_users_to_msg(log_users, message)
+end
+
 def generate_msg_for_commit(values, args, flag, should_commit)
 
   if should_commit and args.length < 2 then Errors.show_invalid_size_commit(flag) end
@@ -227,28 +250,19 @@ def generate_msg_for_commit(values, args, flag, should_commit)
     Errors.show_flag_expect_message_error(flag, args[1])
   end
 
-  log_users = values[LOGGED]
-  issue = values[CURRENT_ISSUE]
-
-  message = ""
-
-  if defined_val?(issue)
-    message += "(" + ISSUE_DELIMITER + issue.strip + ") "
-  end
-
-
-  if defined_val?(log_users)
-    message += log_users
-  end
-
+  message = add_issue_and_log(values)
   message += " " + args[1].to_s
 
   if args.length > 2
     # commit message might have additional flags
     # starting from third argument
-    message = additional_flags_to_commit(args, message, 2, flag)
+    additional_flags_to_commit(args, message, 2, flag)
   end
-  message
+end
+
+def generate_msg_for_long_commit(values, message)
+  msg = add_issue_and_log values
+  msg + "\n" + message
 end
 
 def add_and_commit(values, message)
@@ -663,7 +677,9 @@ def long_commit(args, flag)
       message += msg_file + "\n"
     end
     values,  _, _ = get_values
-    add_and_commit(values, message)
+    message = generate_msg_for_long_commit values, message
+    puts ""
+    add_and_commit values, message
   rescue Interrupt
     puts ""
     puts "Commit message was aborted."
