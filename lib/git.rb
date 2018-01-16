@@ -6,7 +6,7 @@ module Git
 
   # gets the latest changed files in the latest commit
   def self.get_latest_changed_files
-    out = `git ls-files -m`
+    out = `git diff --name-only #{get_current_branch.strip}`
     out.strip.split("\n")
   end
 
