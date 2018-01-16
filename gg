@@ -1,8 +1,13 @@
 #!/usr/bin/env ruby
+#
 require 'find'
 require 'tempfile'
 require 'set'
+
 require_relative 'errors'
+require_relative 'fileutilities'
+require_relative 'help'
+require_relative 'git'
 
 CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
@@ -81,76 +86,8 @@ def log(args, index, start_del, end_del)
     log_users += start_del + arg + end_del
   end
 
-  write_to_file_or_overwrite(LOGGED, "#{LOGGED}=#{log_users}")
+  FileUtilities.write_to_file_or_overwrite(LOGGED, "#{LOGGED}=#{log_users}")
   file.close
-end
-
-def config_file?(name)
-  File.basename(name) == CONFIG_FILE
-end
-
-def write_to_file_or_overwrite(flag, new_value)
-  tmp_file = Tempfile.new(TEMP_CONFIG)
-  file = open_config_file
-  has_been_written = false
-  begin
-    file.each_line do |line|
-      if line.split("=")[0] == flag
-      # overwrite
-      has_been_written = true
-      tmp_file.puts(new_value)
-      else
-      tmp_file.puts(line)
-      end
-    end
-
-  # no line exists
-    unless has_been_written
-      tmp_file.puts(new_value)
-    end
-  tmp_file.close
-  # change the name and overwrite
-  FileUtils.mv(tmp_file, file)
-  file.close
-ensure
-  tmp_file.close
-  tmp_file.unlink
-  file.close
-end
-end
-
-def write_to_file(file_name, value)
-  # assumes file is not opened
-  file = File.open(file_name, "a")
-  file.puts(value)
-  file.close
-end
-
-def delete_line_with_key(key)
-  tmp_file = Tempfile.new(TEMP_CONFIG)
-  file = open_config_file
-  begin
-    file.each_line do |line|
-      next if line.split("=")[0] == key
-      tmp_file.puts(line)
-    end
-  tmp_file.close
-  # change the name and overwrite
-  FileUtils.mv(tmp_file, file)
-  file
-  ensure
-  tmp_file.close
-  tmp_file.unlink
-  file.close
-  end
-end
-
-def exists_config_file
-  Find.find(Dir.pwd) do |e|
-  next if File.directory?(e)
-  return true if config_file?(e)
-end
-false
 end
 
 def remove_config(args, index)
@@ -165,13 +102,13 @@ def remove_config(args, index)
       key = get_key_from_flag(flag)
       # would delete all issues in case key is issue
       if key == ISSUE then should_delete_current_issue = true end
-      file = delete_line_with_key(key)
+      file = FileUtilities.delete_line_with_key(key)
       config_file = file
     end
   end
 
   # if all issues are deleted then also delete the current issue symbol
-  if should_delete_current_issue then delete_line_with_key(CURRENT_ISSUE) end
+  if should_delete_current_issue then FileUtilities.delete_line_with_key(CURRENT_ISSUE) end
   config_file.close
 end
 
@@ -380,7 +317,6 @@ def flag?(str)
   str[0] == '-'
 end
 
-
 def push(args, flag, load_configuration, less_than_two_args)
 
   if less_than_two_args and args.length > 2
@@ -421,8 +357,7 @@ def push(args, flag, load_configuration, less_than_two_args)
 
   # if it is not empty, then some script returned a non zero exit code, so do not push
   unless exit_statuses.empty?
-    puts "Some script returned a non zero exit code. Push aborted."
-    exit 128
+    Errors.show_push_aborted
   end
 
   # push after all scripts have run and exit code was success
@@ -442,13 +377,13 @@ def script(args, flag)
   end
 
   # write the runnable script with the arguments directly to file
-  write_to_file(CONFIG_FILE, "#{RUN_SCRIPT}=#{args[1..-1].join(" ")}")
+  FileUtilities.write_to_file(CONFIG_FILE, "#{RUN_SCRIPT}=#{args[1..-1].join(" ")}")
 end
 
 def execute_script(script)
   if executable_script? script
     # then we cd into the root git directory and run it from there
-    Dir.chdir(get_top_level.strip) do
+    Dir.chdir(Git.get_top_level.strip) do
       # if root contains script execute
       return unless directory_contains? script
       system script
@@ -484,7 +419,7 @@ def push_atts(args)
     if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
     case value_spl[0]
     when "-o"
-      write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+      FileUtilities.write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
     else
       Errors.show_unsupported_command(value_spl[0])
     end
@@ -524,7 +459,7 @@ def pull_atts(args)
     if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
     case value_spl[0]
     when "-o"
-      write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
+      FileUtilities.write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
     else
       Errors.show_unsupported_command(value_spl[0])
     end
@@ -538,7 +473,7 @@ def defined_val?(val)
 end
 
 def always_add_all
-  write_to_file_or_overwrite(ADD, "#{ADD}=#{ALL}")
+  FileUtilities.write_to_file_or_overwrite(ADD, "#{ADD}=#{ALL}")
 end
 
 def get_key_from_flag(flag)
@@ -571,7 +506,7 @@ def issue(args, index)
   end
   # if length is one, then we want to commit without issue
   if args.length == 1
-    delete_line_with_key(CURRENT_ISSUE)
+    FileUtilities.delete_line_with_key(CURRENT_ISSUE)
     exit(0)
   end
   name = ""
@@ -592,7 +527,7 @@ def issue(args, index)
       # it must be an alias or name
       name = get_name_from_alias(arg_spl[0][1..-1].strip)
       if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
-      write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+      FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
       puts "Current issue: #{name}"
       exit(0) # job is done, no need to add any issues
     end
@@ -602,11 +537,11 @@ def issue(args, index)
 
   # writeToFile leaves config_file closed
   if alias_for_name == nil
-    write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
-    write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
+    FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+    FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
   else
-    write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{alias_for_name}")
-    write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}=#{alias_for_name}")
+    FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{alias_for_name}")
+    FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}=#{alias_for_name}")
   end
 
 end
@@ -633,120 +568,6 @@ def correct_issue_arg_length(args)
   args.length >= 1 and args.length <= 3
 end
 
-def print_commands
-  puts ""
-  puts "List of commands in git-god:"
-  puts "Note: opt(x) means x is optional."
-  puts ""
-  puts "gg a"
-  puts "Sets the configuration to add all files for every commit."
-  puts ""
-  puts "gg b"
-  puts "Shows local branches. Equivalent of \"git branch\""
-  puts ""
-  puts "gg ba"
-  puts "Shows all branches. Equivalent of \"git branch -a\""
-  puts ""
-  puts "gg c \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "Commits a message, with optional flags -cl (Closing issues) and -ct (Contributors)"
-  puts "Example: gg c \"hello\" -cl 23 45 -ct gorosgobe"
-  puts "Commits: hello. Closes #23, #45. Contributors: @gorosgobe."
-  puts ""
-  puts "gg cb"
-  puts "Shows the current branch."
-  puts ""
-  puts "gg ch <branch-name>"
-  puts "Checkout to the given branch-name. Equivalent of \"git checkout branch-name\""
-  puts ""
-  puts "gg cn <repo-url>"
-  puts "Clones the given repository. Equivalent of \"git clone repo-url\""
-  puts ""
-  puts "gg -commands"
-  puts "If you do not know what this is, how did you get here?!"
-  puts ""
-  puts "gg cp \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "Commits and pushes. Arguments same as \"gg c\" above. Gets pushing " +
-         "branch from configuration. If it has not been configured, then defaults to " +
-         "master."
-  puts "Equivalent of \"git commit <formatted-message-from-args>\""
-  puts "              \"git push origin <config-branch-or-master>"
-  puts ""
-  puts "gg d <branch-name>"
-  puts "Deletes the given branch. Equivalent of \"git branch -d branch-name\""
-  puts ""
-  puts "gg di"
-  puts "Shows the difference between the current state of the repo versus the " +
-         "last commit. Equivalent of \"git diff\""
-  puts ""
-  puts "gg fa"
-  puts "Equivalent of \"git fetch --all\""
-  puts ""
-  puts "gg gs"
-  puts "Shows the git repo status. Equivalent of \"git status\""
-  puts ""
-  puts "gg i opt([-name=<name> | -name=<name> -alias=<alias>])"
-  puts "gg i opt([-n=<name> | -n=<name> -a=<alias>])"
-  puts "Adds an issue. To add a new issue, the name attribute must be specified. " +
-         "Alias is not required. To set the current issue to be a certain issue defined " +
-         "before, use \"gg i -<alias-or-name-given-to-issue>\". To delete the current " +
-         "issue, use \"gg i\" with no arguments"
-  puts ""
-  puts "gg l opt([-del=<delimiter>]) [<logs>]"
-  puts "Sets the log to be the supplied arguments. An extra argument can be " +
-         "added to specify the delimiter to use for these logs. The delimiter must be " +
-         "one or two characters long."
-  puts ""
-  puts "gg m <branch-name>"
-  puts "Merges the branch supplied to the current branch. Equivalent of \"git merge\""
-  puts ""
-  puts "gg nb <branch-name>"
-  puts "Creates a new branch with the supplied name. Equivalent of \"git checkout -b branch-name\""
-  puts ""
-  puts "gg op"
-  puts "Opens the configuration file #{CONFIG_FILE_EXTENSION} in VIM. Modify at own risk."
-  puts ""
-  puts "gg p opt(<branch-name>)"
-  puts "Pushes. If the branch name is supplied, pushes to that branch. If not, " +
-         "it will push to the branch configured. If no branch has been configured, will " +
-         "default to master"
-  puts ""
-  puts "gg pc -o=<branch-name>"
-  puts "Sets the configuration for pushing. Attribute origin must be supplied."
-  puts ""
-  puts "gg pl opt(<branch-name>)"
-  puts "Pulls from branch. If branch has not been supplied, pulls from the " +
-         "branch configured. If no branch has been configured, then it defaults to master."
-  puts ""
-  puts "gg plc -o=<branch-name>"
-  puts "Sets the configuration for pulling. Attribute origin must be supplied."
-  puts ""
-  puts "gg prcp <parent-branch> \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "Protected commit and push."
-  puts "Equivalent of \"git pull origin parent-branch\""
-  puts "              \"git commit <commit-args>\""
-  puts "              \"git push origin <current-branch>\""
-  puts ""
-  puts "gg r opt(<flags>)"
-  puts "Removes the configuration of the flags supplied. If no flags are" +
-  " supplied, the entire configuration is removed"
-  puts ""
-  puts "gg ro"
-  puts "Shows the root of the repo. Equivalent of \"git rev-parse --show-toplevel\""
-  puts ""
-  puts "gg [s|status]"
-  puts "Shows the current configuration for the repo."
-  puts ""
-  puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
-  puts "Exactly the same as \"gg c\", but only shows the commitable message, without commiting."
-  puts ""
-  puts "gg [scr|script] <script>"
-  puts "Sets the given script/command to run before a push. Scripts/commands must be given relative to the root " +
-         "directory of the git repository. Example: \"gg scr ls -a\"."
-  puts ""
-  puts "gg u"
-  puts "Shows the url of the repo. Equivalent of \"git remote get-url origin\""
-  puts ""
-end
 
 
 def check_if_git_repo
@@ -788,7 +609,7 @@ end
 def merge(args, flag)
   only_allow_one_arg args, flag
   branch = args[1]
-  current_branch = get_current_branch
+  current_branch = Git.get_current_branch
   puts "merging #{branch} to #{current_branch}"
   system "git merge #{branch}"
 end
@@ -802,7 +623,7 @@ def protected_commit_push(args, flag)
   unless args.length >= 2
     Errors.show_at_least_args_error(flag, 2, args.length)
   end
-  current_branch = get_current_branch.strip
+  current_branch = Git.get_current_branch.strip
   target_branch = args[1]
   puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
   system "git pull origin #{target_branch}"
@@ -812,43 +633,9 @@ def protected_commit_push(args, flag)
   push(args_for_push, flag, false, true)
 end
 
-def get_current_branch
-  `git rev-parse --abbrev-ref HEAD`
-end
-
-# uses back ticks as it is used throughout the program, not only printed
-def get_top_level
-  `git rev-parse --show-toplevel`
-end
-
-def get_url
-  system "git remote get-url origin"
-end
-
-def get_status
-  system "git status"
-end
-
-def get_local_branches
-  system "git branch"
-end
-
-def get_all_branches
-  system "git branch -a"
-end
-
-def fetch_all
-  system "git fetch --all"
-end
-
-def get_diff
-  system "git diff"
-end
-
-
 # check if it is a git repository
 check_if_git_repo
-top_level = get_top_level
+top_level = Git.get_top_level
 CONFIG_FILE = File.join(top_level.strip, CONFIG_FILE_EXTENSION)
 
 # create configuration file if it doesnt exist
@@ -863,20 +650,20 @@ case arg
   when "a"
     always_add_all
   when "b"
-    get_local_branches
+    Git.get_local_branches
   when "ba"
-    get_all_branches
+    Git.get_all_branches
   when "c"
     commit(ARGV, "c", true)
   when "cb"
     # show current branch
-    puts get_current_branch
+    puts Git.get_current_branch
   when "ch"
     checkout_branch(ARGV, "ch")
   when "cn"
     clone(ARGV, "cn")
   when "-commands"
-    print_commands
+    Help.print_commands
   when "cp"
     commit(ARGV, "cp", true)
     # do not expect more arguments
@@ -884,11 +671,11 @@ case arg
   when "d"
     delete_branch(ARGV, "d")
   when "di"
-    get_diff
+    Git.get_diff
   when "fa"
-    fetch_all
+    Git.fetch_all
   when "gs"
-    get_status
+    Git.get_status
   when "i"
     issue(ARGV, index)
   when "l"
@@ -913,7 +700,7 @@ case arg
   when "r"
     remove_config(ARGV, index)
   when "ro"
-    puts get_top_level
+    puts Git.get_top_level
   when "status", "s"
     show_status
   when "sc"
@@ -922,7 +709,7 @@ case arg
   when "script", "scr"
     script(ARGV, "script/scr")
   when "u"
-    get_url
+    Git.get_url
   else
     Errors.show_unsupported_command(arg)
 end

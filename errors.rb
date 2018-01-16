@@ -5,6 +5,11 @@ module Errors
     exit(128)
   end
 
+  def Errors.show_push_aborted
+    puts "Some script returned a non zero exit code. Push aborted."
+    exit 128
+  end
+
   def Errors.show_non_removable_config(flag)
     puts "Error: configuration for #{flag} cannot be removed."
     puts "The flag #{flag} is non configurable or does not exist."
