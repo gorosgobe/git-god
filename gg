@@ -28,6 +28,7 @@ PULL_ORIGIN = "pull_origin"
 RUN_SCRIPT = "run_script"
 MASTER = "master"
 COMMA = ", "
+SEE_ALSO = "See also:"
 EXIT_SUCCESS = 0
 
 LOG_PRIORITY = 0
@@ -264,10 +265,12 @@ end
 def additional_flags_to_commit(args, message, index, flag)
   # starting from the third argument
   case args[index]
-  when "-cl"
-    closes(args, message, index, flag)
-  when "-ct"
-    contributes(args, message, index, flag)
+    when "-cl"
+      closes(args, message, index, flag)
+    when "-ct"
+      contributes(args, message, index, flag)
+    when "-sa"
+      see_also(args, message, index, flag)
   end
 end
 
@@ -279,6 +282,10 @@ end
 
 def contributes(args, message, index_on_entry, flag)
   add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA)
+end
+
+def see_also(args, message, index_on_entry, flag)
+  add_appending_flag(args, message, index_on_entry, flag, SEE_ALSO, ISSUE_MENTION, COMMA)
 end
 
 def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join)
