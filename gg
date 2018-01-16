@@ -231,12 +231,13 @@ def generate_msg_for_commit(values, args, flag, should_commit)
 
   message = ""
 
-  if defined_val?(log_users)
-    message += log_users
+  if defined_val?(issue)
+    message += "(" + ISSUE_DELIMITER + issue.strip + ") "
   end
 
-  if defined_val?(issue)
-    message += ISSUE_DELIMITER + issue
+
+  if defined_val?(log_users)
+    message += log_users
   end
 
   message += " " + args[1].to_s
