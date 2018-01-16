@@ -1,35 +1,67 @@
 module Git
 
-  def Git.get_top_level
+  def self.get_top_level
     `git rev-parse --show-toplevel`
   end
 
-  def Git.get_url
+  def self.get_url
     system "git remote get-url origin"
   end
 
-  def Git.get_status
+  def self.get_status
     system "git status"
   end
 
-  def Git.get_local_branches
+  def self.get_local_branches
     system "git branch"
   end
 
-  def Git.get_all_branches
+  def self.get_all_branches
     system "git branch -a"
   end
 
-  def Git.fetch_all
+  def self.fetch_all
     system "git fetch --all"
   end
 
-  def Git.get_diff
+  def self.get_diff
     system "git diff"
   end
 
-  def Git.get_current_branch
+  def self.get_current_branch
     `git rev-parse --abbrev-ref HEAD`
+  end
+
+  def self.pull_origin(target_branch)
+    system "git pull origin #{target_branch}"
+  end
+
+  def self.push_origin(target_branch)
+    system "git push origin #{target_branch}"
+  end
+
+  def self.commit(message)
+    system "git commit -m \"#{message}\""
+  end
+
+  def self.checkout(target_branch)
+    system "git checkout -b #{target_branch}"
+  end
+
+  def self.clone(repo)
+    system "git clone #{repo}"
+  end
+
+  def self.delete_branch(branch)
+    system "git branch -d #{branch}"
+  end
+
+  def self.merge(branch)
+    system "git merge #{branch}"
+  end
+
+  def self.add_all
+    system "git add -A"
   end
 
 end

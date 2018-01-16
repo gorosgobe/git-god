@@ -1,6 +1,6 @@
 module FileUtilities
 
-  def FileUtilities.delete_line_with_key(key)
+  def self.delete_line_with_key(key)
     tmp_file = Tempfile.new(TEMP_CONFIG)
     file = open_config_file
     begin
@@ -19,7 +19,7 @@ module FileUtilities
     end
   end
 
-  def FileUtilities.write_to_file_or_overwrite(flag, new_value)
+  def self.write_to_file_or_overwrite(flag, new_value)
     tmp_file = Tempfile.new(TEMP_CONFIG)
     file = open_config_file
     has_been_written = false
@@ -49,7 +49,7 @@ module FileUtilities
     end
   end
 
-  def FileUtilities.write_to_file(file_name, value)
+  def self.write_to_file(file_name, value)
     # assumes file is not opened
     file = File.open(file_name, "a")
     file.puts(value)

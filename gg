@@ -26,6 +26,7 @@ MENTION = "@"
 ISSUE_MENTION = "#"
 PULL_ORIGIN = "pull_origin"
 RUN_SCRIPT = "run_script"
+MASTER = "master"
 EXIT_SUCCESS = 0
 
 LOG_PRIORITY = 0
@@ -251,11 +252,11 @@ def add_and_commit(values, message)
   add_atts = values[ADD]
   if defined_val?(add_atts)
     puts "adding all"
-    system "git add -A"
+    Git.add_all
   end
   puts "commiting..."
   puts "\"#{message}\""
-  system "git commit -m \"#{message}\""
+  Git.commit message
 end
 
 def additional_flags_to_commit(args, message, index, flag)
@@ -317,6 +318,7 @@ def flag?(str)
   str[0] == '-'
 end
 
+
 def push(args, flag, load_configuration, less_than_two_args)
 
   if less_than_two_args and args.length > 2
@@ -363,10 +365,10 @@ def push(args, flag, load_configuration, less_than_two_args)
   # push after all scripts have run and exit code was success
   if not defined_val?(push_attributes)
     puts "pushing to master"
-    system "git push origin master"
+    Git.push_origin MASTER
   else
     puts "pushing to #{push_attributes}"
-    system "git push origin #{push_attributes}"
+    Git.push_origin push_attributes
   end
 end
 
@@ -442,11 +444,11 @@ def pull(args, flag)
   unless defined_val?(pull_origin)
     # if not defined in configuration file and not given in argument to flag
     # then choose master by default
-    pull_origin = "master"
+    pull_origin = MASTER
   end
 
   puts "pulling from #{pull_origin}"
-  system "git pull origin #{pull_origin}"
+  Git.pull_origin pull_origin
 end
 
 def pull_atts(args)
@@ -582,28 +584,28 @@ def new_branch(args, flag)
   only_allow_one_arg args, flag
   branch_name = args[1]
   puts "creating new branch: #{branch_name}"
-  system "git checkout -b #{branch_name}"
+  Git.checkout branch_name
 end
 
 def checkout_branch(args, flag)
   only_allow_one_arg args, flag
   branch_name = args[1]
   puts "checkout to branch #{branch_name}"
-  system "git checkout #{branch_name}"
+  Git.checkout branch_name
 end
 
 def clone(args, flag)
   only_allow_one_arg args, flag
   repo = args[1]
   puts "cloning #{repo}"
-  system "git clone #{repo}"
+  Git.clone repo
 end
 
 def delete_branch(args, flag)
   only_allow_one_arg args, flag
   branch = args[1]
   puts "deleting #{branch}"
-  system "git branch -d #{branch}"
+  Git.delete_branch branch
 end
 
 def merge(args, flag)
@@ -611,7 +613,7 @@ def merge(args, flag)
   branch = args[1]
   current_branch = Git.get_current_branch
   puts "merging #{branch} to #{current_branch}"
-  system "git merge #{branch}"
+  Git.merge branch
 end
 
 def only_allow_one_arg(args, flag)
@@ -626,7 +628,7 @@ def protected_commit_push(args, flag)
   current_branch = Git.get_current_branch.strip
   target_branch = args[1]
   puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
-  system "git pull origin #{target_branch}"
+  Git.pull_origin target_branch
   should_commit = true
   commit(args[2..-1], flag, should_commit)
   args_for_push = [flag, current_branch]
