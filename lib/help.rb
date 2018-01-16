@@ -84,7 +84,7 @@ module Help
   end
 
   def self.gg_show_commit
-    puts "gg sc \"<some message>\" [-cl <args>|-ct <args>]"
+    puts "gg sc \"<some message>\" [-cl <args>|-ct <args>|-sa <args>]"
     puts "Exactly the same as \"gg c\", but only shows the commitable message, without commiting."
   end
 
@@ -105,7 +105,7 @@ module Help
   end
 
   def self.gg_protected_commit_push
-    puts "gg prcp <parent-branch> \"<some message>\" [-cl <args>|-ct <args>]"
+    puts "gg prcp <parent-branch> \"<some message>\" [-cl <args>|-ct <args>|-sa <args>]"
     puts "Protected commit and push."
     puts "Equivalent of \"git pull origin parent-branch\""
     puts "              \"git commit <commit-args>\""
@@ -183,7 +183,7 @@ module Help
   end
 
   def self.gg_commit_push
-    puts "gg cp \"<some message>\" [-cl <args>|-ct <args>]"
+    puts "gg cp \"<some message>\" [-cl <args>|-ct <args>|-sa <args>]"
     puts "Commits and pushes. Arguments same as \"gg c\" above. Gets pushing " +
              "branch from configuration. If it has not been configured, then defaults to " +
              "master."
@@ -212,10 +212,10 @@ module Help
   end
 
   def self.gg_commit
-    puts "gg c \"<some message>\" [-cl <args>|-ct <args>]"
-    puts "Commits a message, with optional flags -cl (Closing issues) and -ct (Contributors)"
-    puts "Example: gg c \"hello\" -cl 23 45 -ct gorosgobe"
-    puts "Commits: hello. Closes #23, #45. Contributors: @gorosgobe."
+    puts "gg c \"<some message>\" [-cl <args>|-ct <args>|-sa <args>]"
+    puts "Commits a message, with optional flags -cl (Closing issues), -ct (Contributors), -sa (See also)"
+    puts "Example: gg c \"hello\" -cl 23 45 -ct gorosgobe -sa 24"
+    puts "Commits: hello. Closes #23, #45. Contributors: @gorosgobe. See also: #24."
   end
 
   def self.gg_all_branches
