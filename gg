@@ -2,6 +2,7 @@
 require 'find'
 require 'tempfile'
 require 'set'
+require_relative 'errors'
 
 CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
@@ -30,11 +31,11 @@ CURRENT_PRIORITY = 4
 
 def check_params_del(arg_spl, args)
   if args.length == 2
-    show_no_log_included_error
+    Errors.show_no_log_included_error
   end
 
   if arg_spl.length == 1
-    show_delimiter_empty_error
+    Errors.show_delimiter_empty_error
   end
 end
 
@@ -43,7 +44,7 @@ def handle_log(args, index)
   end_del = DEFAULT_END_LOG
 
   if args.length == 1
-    show_no_log_included_error
+    Errors.show_no_log_included_error
   end
 
   args.each_with_index do |arg, i|
@@ -61,7 +62,7 @@ def handle_log(args, index)
         log(args, i, arg_spl[1][0], arg_spl[1][1])
         return
       else
-        show_invalid_delimiter_error
+        Errors.show_invalid_delimiter_error
       end
     end
   end
@@ -69,26 +70,6 @@ def handle_log(args, index)
   log(args, index, start_del, end_del)
 end
 
-def show_no_log_included_error
-  puts "Error: no logs have been included."
-  exit(128)
-end
-
-def show_delimiter_empty_error
-  puts "Error: delimiter is empty or it is invalid."
-  to_add_delimiter_tut
-end
-
-def show_invalid_delimiter_error
-  puts "Error: invalid delimiter supplied for log."
-  to_add_delimiter_tut
-end
-
-def to_add_delimiter_tut
-  puts "To add a delimiter, add flag -del=\"<delimiter>\". Note the double quotes."
-  puts "<delimiter> must be one or two characters."
-  exit(128)
-end
 
 def log(args, index, start_del, end_del)
   # find the previous logged info
@@ -298,12 +279,12 @@ end
 
 def generate_msg_for_commit(values, args, flag, should_commit)
 
-  if should_commit and args.length < 2 then show_invalid_size_commit(flag) end
+  if should_commit and args.length < 2 then Errors.show_invalid_size_commit(flag) end
 
   # if there are enough arguments, check that the first one to the commit flag
   # is not a flag
   if args.length > 1 and flag?(args[1])
-    show_flag_expect_message_error(flag, args[1])
+    Errors.show_flag_expect_message_error(flag, args[1])
   end
 
   log_users = values[LOGGED]
@@ -361,7 +342,7 @@ def contributes(args, message, index_on_entry, flag)
 end
 
 def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref)
-  if args.length <= index_on_entry + 1 then show_invalid_size_commit(flag) end
+  if args.length <= index_on_entry + 1 then Errors.show_invalid_size_commit(flag) end
   refs = Array.new
   # start at argument
   index = index_on_entry + 1
@@ -399,20 +380,11 @@ def flag?(str)
   str[0] == '-'
 end
 
-def show_flag_expect_message_error(flag, value)
-  puts "Error: #{flag} expects a message, but got \"#{value}\"."
-  expected_commit(flag)
-end
-
-def expected_commit(flag)
-  puts "Expected: gg #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
-  exit(128)
-end
 
 def push(args, flag, load_configuration, less_than_two_args)
 
   if less_than_two_args and args.length > 2
-    show_too_many_args_error(flag, 1, args.length - 1)
+    Errors.show_too_many_args_error(flag, 1, args.length - 1)
   end
 
   values, _, scripts = get_values
@@ -463,15 +435,10 @@ def push(args, flag, load_configuration, less_than_two_args)
   end
 end
 
-def show_script_not_in_root_error(script, should_exit)
-  puts "Error: script \"#{script}\" should be relative to the root directory of the git repository."
-  exit 128 if should_exit
-end
-
 def script(args, flag)
 
   if args.length == 1
-    show_at_least_args_error(flag, 1, 0)
+    Errors.show_at_least_args_error(flag, 1, 0)
   end
 
   # write the runnable script with the arguments directly to file
@@ -499,7 +466,7 @@ def directory_contains?(script)
     # it is an executable script
     return true if entry == File.absolute_path(script[2..-1])
   end
-  show_script_not_in_root_error script, false
+  Errors.show_script_not_in_root_error script, false
   false
 end
 
@@ -509,23 +476,23 @@ end
 
 def push_atts(args)
   if args.length == 1
-    show_push_atts_no_atts_error
+    Errors.show_push_atts_no_atts_error
   end
 
   args[1..-1].each do |value|
     value_spl = value.split("=")
-    if value_spl.length == 1 then show_push_atts_no_atts_error end
+    if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
     case value_spl[0]
     when "-o"
       write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
     else
-      unsupported_command(value_spl[0])
+      Errors.show_unsupported_command(value_spl[0])
     end
   end
 end
 
 def pull(args, flag)
-  if args.length > 2 then show_too_many_args_error(flag, 1, args.length - 1) end
+  if args.length > 2 then Errors.show_too_many_args_error(flag, 1, args.length - 1) end
 
   values, _, _ = get_values
 
@@ -549,37 +516,22 @@ end
 
 def pull_atts(args)
   if args.length == 1
-    show_pull_atts_no_atts_error
+    Errors.show_pull_atts_no_atts_error
   end
 
   args[1..-1].each do |value|
     value_spl = value.split("=")
-    if value_spl.length == 1 then show_pull_atts_no_atts_error end
+    if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
     case value_spl[0]
     when "-o"
       write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
     else
-      unsupported_command(value_spl[0])
+      Errors.show_unsupported_command(value_spl[0])
     end
   end
 end
 
-def show_invalid_size_commit(calling_flag)
-  puts "Error: trying to commit but incorrect number of arguments supplied."
-  expected_commit(calling_flag)
-end
 
-def show_push_atts_no_atts_error
-  puts "Error: trying to add a configuration for push but no attributes are found."
-  puts "To add a configuration for push, use \"gg pc -o=<branch-name>\"."
-  exit(128)
-end
-
-def show_pull_atts_no_atts_error
-  puts "Error: trying to add a configuration for pull but no attributes are found."
-  puts "To add a configuration for pull, use \"gg pl -o=<branch-name>\"."
-  exit(128)
-end
 
 def defined_val?(val)
   val != nil
@@ -591,9 +543,7 @@ end
 
 def get_key_from_flag(flag)
   unless configurable?(flag)
-    puts "Error: configuration for #{flag} cannot be removed."
-    puts "The flag #{flag} is non configurable or does not exist."
-    exit(128)
+    Errors.show_non_removable_config flag
   end
   case flag
     when "l"
@@ -617,7 +567,7 @@ end
 
 def issue(args, index)
   unless correct_issue_arg_length(args)
-    show_no_name_or_alias_error
+    Errors.show_no_name_or_alias_error
   end
   # if length is one, then we want to commit without issue
   if args.length == 1
@@ -641,14 +591,14 @@ def issue(args, index)
       end
       # it must be an alias or name
       name = get_name_from_alias(arg_spl[0][1..-1].strip)
-      if name == nil then show_error_issue_not_exist(arg_spl[0][1..-1]) end
+      if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
       write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
       puts "Current issue: #{name}"
       exit(0) # job is done, no need to add any issues
     end
   end
 
-  if name == nil then show_no_name_for_issue_error end
+  if name == nil then Errors.show_no_name_for_issue_error end
 
   # writeToFile leaves config_file closed
   if alias_for_name == nil
@@ -679,35 +629,8 @@ def get_name_from_alias(alias_or_name)
   end
 end
 
-def show_error_issue_not_exist(name)
-  puts "Error: issue with name #{name} or alias #{name} does not exist."
-  expected_for_issue
-end
-
 def correct_issue_arg_length(args)
   args.length >= 1 and args.length <= 3
-end
-
-def show_no_name_for_issue_error
-  puts "Error: no name was supplied for a new issue."
-  expected_for_issue
-end
-
-def show_no_name_or_alias_error
-  puts "Error: Creating a new issue expects a name and an optional alias."
-  expected_for_issue
-end
-
-def expected_for_issue
-  puts "Expected: \"gg i -name=<issue-name>\" or \"gg i -name=<issue-name> -alias=<alias>\"."
-  puts "Alternatively: \"gg i -n=<issue-name>\" or \"gg i -n=<issue-name> -a=<alias>\"."
-  puts "To set the current issue, use \"gg i -<alias or name of issue>\"."
-  exit(128)
-end
-
-def unsupported_command(arg)
-  puts "Error: unexpected command \"#{arg}\" found."
-  puts "To view a full list of all arguments to gg, run gg -commands."
 end
 
 def print_commands
@@ -825,27 +748,13 @@ def print_commands
   puts ""
 end
 
-def show_not_git_repo_error
-  puts "Error: current directory is not a git repository."
-  exit(128)
-end
 
 def check_if_git_repo
   # suppressing the output of git status
   system "git", "status", :out => File::NULL, :err => File::NULL
   if $?.exitstatus != EXIT_SUCCESS
-    show_not_git_repo_error
+    Errors.show_not_git_repo_error
   end
-end
-
-def show_too_many_args_error(flag, expected, len)
-  puts "Error: #{flag} received too many arguments. Expected #{expected}, got #{len}."
-  exit(128)
-end
-
-def show_not_enough_args_error(flag, expected, len)
-  puts "Error: #{flag} did not receive enough arguments. Expected #{expected}, got #{len}."
-  exit(128)
 end
 
 def new_branch(args, flag)
@@ -885,13 +794,13 @@ def merge(args, flag)
 end
 
 def only_allow_one_arg(args, flag)
-  if args.length > 2 then show_too_many_args_error(flag, 1, args.length - 1) end
-  if args.length == 1 then show_not_enough_args_error(flag, 1, 0) end
+  if args.length > 2 then Errors.show_too_many_args_error(flag, 1, args.length - 1) end
+  if args.length == 1 then Errors.show_not_enough_args_error(flag, 1, 0) end
 end
 
 def protected_commit_push(args, flag)
   unless args.length >= 2
-    show_at_least_args_error(flag, 2, args.length)
+    Errors.show_at_least_args_error(flag, 2, args.length)
   end
   current_branch = get_current_branch.strip
   target_branch = args[1]
@@ -901,11 +810,6 @@ def protected_commit_push(args, flag)
   commit(args[2..-1], flag, should_commit)
   args_for_push = [flag, current_branch]
   push(args_for_push, flag, false, true)
-end
-
-def show_at_least_args_error(flag, at_least_num, actual_num)
-  puts "Error: #{flag} expects at least #{at_least_num} arguments, but got #{actual_num}"
-  exit(128  )
 end
 
 def get_current_branch
@@ -1020,5 +924,5 @@ case arg
   when "u"
     get_url
   else
-    unsupported_command(arg)
+    Errors.show_unsupported_command(arg)
 end
