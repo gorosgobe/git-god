@@ -131,24 +131,24 @@ Deletes a branch.
 ```
 gg d <branch-name>   # equivalent of "git branch -d <branch-name>"
 ```
-Lists branches and current branch
+Lists branches and current branch.
 ```
 gg b                 # equivalent of "git branch"
 gg ba                # equivalent of "git branch -a"
 ```
-Shows the current git repository status
+Shows the current git repository status.
 ```
-gg gs                # equivalent of `git status`
+gg gs                # equivalent of "git status"
 ```
-Merges branch to current branch
+Merges branch to current branch.
 ```
-gg m <branch-name>
+gg m <branch-name>   # equivalent of "git merge <branch-name>"
 ```
-Prints current branch
+Prints current branch.
 ```
-gg cb
+gg cb                # equivalent of "git rev-parse --abbrev-ref HEAD"
 ```
-Prints root of git repository
+Prints root of git repository.
 ```
-gg ro
+gg ro                # equivalent of "git rev-parse --show-toplevel"
 ```

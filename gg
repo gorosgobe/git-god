@@ -4,10 +4,10 @@ require 'find'
 require 'tempfile'
 require 'set'
 
-require_relative 'errors'
-require_relative 'fileutilities'
-require_relative 'help'
-require_relative 'git'
+require_relative 'lib/errors'
+require_relative 'lib/fileutilities'
+require_relative 'lib/help'
+require_relative 'lib/git'
 
 CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
@@ -499,7 +499,8 @@ def get_key_from_flag(flag)
 end
 
 def configurable?(flag)
-  flag == "l" or flag == "pc" or flag == "a" or flag == "i" or flag == "plc" or flag == "scr" or flag == "script"
+  flag == "l" or flag == "pc" or flag == "a" or flag == "i" or
+      flag == "plc" or flag == "scr" or flag == "script"
 end
 
 def issue(args, index)
@@ -569,8 +570,6 @@ end
 def correct_issue_arg_length(args)
   args.length >= 1 and args.length <= 3
 end
-
-
 
 def check_if_git_repo
   # suppressing the output of git status
