@@ -637,7 +637,7 @@ end
 
 # after cloning we do not want to do anything else as we would not be yet inside the git repository
 def exec_if_clone_command_and_exit(args, clone_flag)
-  if args[1] == clone_flag
+  if args[0] == clone_flag
     clone(args, clone_flag)
     exit EXIT_SUCCESS
   end
