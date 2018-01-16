@@ -4,6 +4,12 @@ module Git
     `git rev-parse --show-toplevel`
   end
 
+  # gets the latest changed files in the latest commit
+  def self.get_latest_changed_files
+    out = `git ls-files -m`
+    out.strip.split("\n")
+  end
+
   def self.get_url
     system "git remote get-url origin"
   end

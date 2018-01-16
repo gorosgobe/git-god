@@ -28,6 +28,7 @@ PULL_ORIGIN = "pull_origin"
 RUN_SCRIPT = "run_script"
 MASTER = "master"
 COMMA = ", "
+SEE_ALSO = "See also:"
 EXIT_SUCCESS = 0
 
 LOG_PRIORITY = 0
@@ -59,18 +60,18 @@ def handle_log(args, index)
     case arg_spl[0]
       when "-del"
 
-      check_params_del(arg_spl, args)
+        check_params_del(arg_spl, args)
 
-      # only one character provided, use for both
-      if arg_spl[1].length == 1
-        log(args, i, arg_spl[1][0], arg_spl[1][0])
-        return
-      elsif arg_spl[1].length == 2 then
-        log(args, i, arg_spl[1][0], arg_spl[1][1])
-        return
-      else
-        Errors.show_invalid_delimiter_error
-      end
+        # only one character provided, use for both
+        if arg_spl[1].length == 1
+          log(args, i, arg_spl[1][0], arg_spl[1][0])
+          return
+        elsif arg_spl[1].length == 2 then
+          log(args, i, arg_spl[1][0], arg_spl[1][1])
+          return
+        else
+          Errors.show_invalid_delimiter_error
+        end
     end
   end
 
@@ -97,7 +98,7 @@ def remove_config(args, index)
   should_delete_current_issue = false
   if args.length == 1
     # flag is only -r, delete whole configuration
-  if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
+    if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
   else
     # delete specific attributes
     args[index + 1..-1].each do |flag|
@@ -146,16 +147,16 @@ def show_status
   info = Hash[info.sort]
   info.each do |k, v|
     case k
-    when LOG_PRIORITY
-      puts "logged: #{v[0]}"
-    when ADD_PRIORITY
-      if v[0].length != 0 then puts "add: " + ALL end
-    when PUSH_ORIGIN_PRIORITY
-      puts "pushing to: #{v[0]}"
-    when PULL_ORIGIN_PRIORITY
-      puts "pulling from: #{v[0]}"
-    when CURRENT_PRIORITY
-      puts "current issue: #{v[0]}"
+      when LOG_PRIORITY
+        puts "logged: #{v[0]}"
+      when ADD_PRIORITY
+        if v[0].length != 0 then puts "add: " + ALL end
+      when PUSH_ORIGIN_PRIORITY
+        puts "pushing to: #{v[0]}"
+      when PULL_ORIGIN_PRIORITY
+        puts "pulling from: #{v[0]}"
+      when CURRENT_PRIORITY
+        puts "current issue: #{v[0]}"
     end
   end
 
@@ -231,12 +232,13 @@ def generate_msg_for_commit(values, args, flag, should_commit)
 
   message = ""
 
-  if defined_val?(log_users)
-    message += log_users
+  if defined_val?(issue)
+    message += "(" + ISSUE_DELIMITER + issue.strip + ") "
   end
 
-  if defined_val?(issue)
-    message += ISSUE_DELIMITER + issue
+
+  if defined_val?(log_users)
+    message += log_users
   end
 
   message += " " + args[1].to_s
@@ -263,10 +265,12 @@ end
 def additional_flags_to_commit(args, message, index, flag)
   # starting from the third argument
   case args[index]
-  when "-cl"
-    closes(args, message, index, flag)
-  when "-ct"
-    contributes(args, message, index, flag)
+    when "-cl"
+      closes(args, message, index, flag)
+    when "-ct"
+      contributes(args, message, index, flag)
+    when "-sa"
+      see_also(args, message, index, flag)
   end
 end
 
@@ -278,6 +282,10 @@ end
 
 def contributes(args, message, index_on_entry, flag)
   add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA)
+end
+
+def see_also(args, message, index_on_entry, flag)
+  add_appending_flag(args, message, index_on_entry, flag, SEE_ALSO, ISSUE_MENTION, COMMA)
 end
 
 def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join)
@@ -331,9 +339,9 @@ def push(args, flag, load_configuration, less_than_two_args)
   if load_configuration
     push_attributes = values[PUSH_ORIGIN]
   else
-  # if we do not need to load from configuration, and there is a branch push to
-  # that branch. If there is not a branch, then it will be nil, and will default
-  # to master
+    # if we do not need to load from configuration, and there is a branch push to
+    # that branch. If there is not a branch, then it will be nil, and will default
+    # to master
     if args.length == 2
       push_attributes = args[1]
     else
@@ -421,10 +429,10 @@ def push_atts(args)
     value_spl = value.split("=")
     if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
     case value_spl[0]
-    when "-o"
-      FileUtilities.write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
-    else
-      Errors.show_unsupported_command(value_spl[0])
+      when "-o"
+        FileUtilities.write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+      else
+        Errors.show_unsupported_command(value_spl[0])
     end
   end
 end
@@ -461,10 +469,10 @@ def pull_atts(args)
     value_spl = value.split("=")
     if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
     case value_spl[0]
-    when "-o"
-      FileUtilities.write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
-    else
-      Errors.show_unsupported_command(value_spl[0])
+      when "-o"
+        FileUtilities.write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
+      else
+        Errors.show_unsupported_command(value_spl[0])
     end
   end
 end
@@ -519,21 +527,21 @@ def issue(args, index)
   args[index + 1..-1].each do |arg|
     arg_spl = arg.split("=")
     case arg_spl[0]
-    when "-name", "-n"
-      name = arg_spl[1]
-    when "-alias", "-a"
-      alias_for_name = arg_spl[1]
-    else
-      values, _, _ = get_values
-      if arg_spl[0][1..-1] == values[CURRENT_ISSUE]
-        exit(0)
-      end
-      # it must be an alias or name
-      name = get_name_from_alias(arg_spl[0][1..-1].strip)
-      if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
-      FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
-      puts "Current issue: #{name}"
-      exit(0) # job is done, no need to add any issues
+      when "-name", "-n"
+        name = arg_spl[1]
+      when "-alias", "-a"
+        alias_for_name = arg_spl[1]
+      else
+        values, _, _ = get_values
+        if arg_spl[0][1..-1] == values[CURRENT_ISSUE]
+          exit(0)
+        end
+        # it must be an alias or name
+        name = get_name_from_alias(arg_spl[0][1..-1].strip)
+        if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
+        FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+        puts "Current issue: #{name}"
+        exit(0) # job is done, no need to add any issues
     end
   end
 
@@ -635,6 +643,33 @@ def protected_commit_push(args, flag)
   push(args_for_push, flag, false, true)
 end
 
+def long_commit(args, flag)
+  if args.length != 1 then Errors.show_too_many_args_error(flag, 0, args.length - 1) end
+
+  files = Git.get_latest_changed_files
+  return if files.empty?
+  begin
+    message = ""
+    puts "--Long commit mode--"
+    puts ""
+    puts "Files changed: "
+    puts files
+    puts ""
+    puts "Enter the commit message associated with each file:"
+    files.each do |file_name|
+      message += file_name + ": "
+      print file_name + ": "
+      msg_file = STDIN.gets.chomp
+      message += msg_file + "\n"
+    end
+    values,  _, _ = get_values
+    add_and_commit(values, message)
+  rescue Interrupt
+    puts ""
+    puts "Commit message was aborted."
+  end
+end
+
 # after cloning we do not want to do anything else as we would not be yet inside the git repository
 def exec_if_clone_command_and_exit(args, clone_flag)
   if args[0] == clone_flag
@@ -691,6 +726,8 @@ case arg
     issue(ARGV, index)
   when "l"
     handle_log(ARGV, index)
+  when "lc"
+    long_commit(ARGV, "lc")
   when "m"
     merge(ARGV, "m")
   when "nb"

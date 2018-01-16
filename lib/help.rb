@@ -35,6 +35,8 @@ module Help
     puts ""
     gg_log
     puts ""
+    puts gg_long_commit
+    puts ""
     gg_merge
     puts ""
     gg_new_branch
@@ -63,6 +65,11 @@ module Help
     puts ""
     gg_url
     puts ""
+  end
+
+  def self.gg_long_commit
+    puts "gg lc"
+    puts "Allows to commit with a specific message per changed file."
   end
 
   def self.gg_url
