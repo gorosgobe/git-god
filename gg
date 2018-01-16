@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-#
+
 require 'find'
 require 'tempfile'
 require 'set'
@@ -635,12 +635,23 @@ def protected_commit_push(args, flag)
   push(args_for_push, flag, false, true)
 end
 
+# after cloning we do not want to do anything else as we would not be yet inside the git repository
+def exec_if_clone_command_and_exit(args, clone_flag)
+  if args[1] == clone_flag
+    clone(args, clone_flag)
+    exit EXIT_SUCCESS
+  end
+end
+
+# cloning is the only operation currently supported that is executed externally, out of a git repository
+exec_if_clone_command_and_exit ARGV, "cn"
 # check if it is a git repository
 check_if_git_repo
+
 top_level = Git.get_top_level
 CONFIG_FILE = File.join(top_level.strip, CONFIG_FILE_EXTENSION)
 
-# create configuration file if it doesnt exist
+# create configuration file if it does not exist
 unless File.exist?(CONFIG_FILE)
   config_file = File.open(CONFIG_FILE, "w+")
   config_file.close
@@ -662,8 +673,6 @@ case arg
     puts Git.get_current_branch
   when "ch"
     checkout_branch(ARGV, "ch")
-  when "cn"
-    clone(ARGV, "cn")
   when "-commands"
     Help.print_commands
   when "cp"
