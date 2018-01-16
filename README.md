@@ -99,7 +99,7 @@ gg l gorosgobe
 gg i -name="bugFix3" -alias=b3  # equivalent to gg i -n="bugFix3" -a=b3
 gg c "commit message"           # commits: "[gorosgobe]#bugFix3 commit message"
 gg i                            # sets current issue to be none
-gg c "commit message"           # commits: [gorosgobe] commit message"
+gg c "commit message"           # commits: "[gorosgobe] commit message"
 gg i -b3
 gg c "commit message 2"         # commits: "[gorosgobe]#bugFix3 commit message 2"
 ```
