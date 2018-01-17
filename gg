@@ -706,13 +706,13 @@ def long_commit(args, flag)
     if message.strip.length == 0
       Errors.show_empty_commit_error
     end
-    #add_and_commit values, message
-    puts message
+    add_and_commit values, message
   rescue Interrupt
     puts ""
     puts "Commit was aborted."
   end
 end
+
 
 # after cloning we do not want to do anything else as we would not be yet inside the git repository
 def exec_if_clone_command_and_exit(args, clone_flag)
