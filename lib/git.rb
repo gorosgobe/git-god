@@ -39,11 +39,21 @@ module Git
   end
 
   def self.pull_origin(target_branch)
-    system "git pull origin #{target_branch}"
+    begin
+      system "git pull origin #{target_branch}"
+    rescue Interrupt
+      puts ""
+      puts "Pull aborted."
+    end
   end
 
   def self.push_origin(target_branch)
-    system "git push origin #{target_branch}"
+    begin
+      system "git push origin #{target_branch}"
+    rescue Interrupt
+      puts ""
+      puts "Push aborted."
+    end
   end
 
   def self.commit(message)
@@ -55,7 +65,12 @@ module Git
   end
 
   def self.clone(repo)
+    begin
     system "git clone #{repo}"
+    rescue Interrupt
+      puts ""
+      puts "Clone aborted."
+    end
   end
 
   def self.delete_branch(branch)
