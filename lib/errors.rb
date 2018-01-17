@@ -111,4 +111,14 @@ module Errors
     exit(128)
   end
 
+  def self.show_empty_commit_error
+    puts "Error: empty commit."
+    exit 128
+  end
+
+  def self.show_long_commit_invalid_addflg(flag)
+    puts "Error: invalid argument supplied to additional flags."
+    exit 128
+  end
+
 end
