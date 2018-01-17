@@ -27,6 +27,22 @@ gg p
 gg cp "message" # commits same as first command but also pushes to 
                 # configuration branch or master. See gg p below
 ```
+Make a long commit, with information per file.
+```
+gg lc
+--Long commit mode--
+
+Files changed: 
+gg
+
+Enter the commit message associated with each file:
+gg: Added template message
+Additional flags: -ct gorosgobe
+
+gg: Added template message
+
+Contributors: @gorosgobe.      # Commits the last three lines.
+```
 Shows the current configuration.
 ```
 gg status
