@@ -3,15 +3,11 @@ class BaseCommand
   require_relative 'errors'
   require_relative 'range'
 
-  attr_accessor :range
+  attr_accessor :flag, :range
 
   def initialize(flag, range)
     @flag = flag
     @range = range
-  end
-
-  def flag
-    @flag
   end
 
   def parse(args)
