@@ -15,6 +15,11 @@ If you wish to feel even more like a god, add the following line too:
 alias g='gg'
 ```
 
+# Customisation - adding your own commands.
+git-god is a tool that can be extended really easily. In order to add your own commands, you need to create a subclass of the BaseCommand class (in lib/), defining the execute() method. Then, put your file in the custom/ directory, and git-god will load it automatically each time it runs. As simple as that.
+
+For an example of how to implement such commandsm see the "gg ig <file-name>" command in the custom/ directory, which allows the user to add files to their .gitignore file. 
+
 # Features
 The following are the features currently supported by git-god.
 
@@ -167,4 +172,8 @@ gg cb                # equivalent of "git rev-parse --abbrev-ref HEAD"
 Prints root of git repository.
 ```
 gg ro                # equivalent of "git rev-parse --show-toplevel"
+```
+Adds a file to the .gitignore file. If the .gitignore file does not exist, creates a new one.
+```
+gg ig <file-name>
 ```
