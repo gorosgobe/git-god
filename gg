@@ -737,7 +737,6 @@ def inspect_custom(args)
   after = ObjectSpace.each_object(Class).to_a
   # Map on the difference and instantiate
   instantiations = (after - before)
-  puts "Loaded modules: #{instantiations.inspect}"
   instantiations = instantiations.map {|klass| klass.new }
   has_executed = false
 
@@ -745,10 +744,13 @@ def inspect_custom(args)
     # for every instance, if it is a subclass of BaseCommand check flag
     # if flag coincides, then call execute_command on it.
     if instance.class <= BaseCommand
-      has_executed = true
-      instance.execute_command(args) if instance.flag == args[0]
+      if instance.flag == args[0]
+        instance.execute_command(args)
+        has_executed = true
+      end
     end
   end
+
   # if nothing has been executed then it is not a valid command.
   unless has_executed then Errors.show_unsupported_command args[0] end
 end

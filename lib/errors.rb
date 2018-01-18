@@ -92,6 +92,7 @@ module Errors
   def self.show_unsupported_command(arg)
     puts "Error: unexpected command \"#{arg}\" found."
     puts "To view a full list of all arguments to gg, run gg -commands."
+    exit(128)
   end
 
   def self.show_invalid_size_commit(calling_flag)
