@@ -51,8 +51,8 @@ module FileUtilities
 
   def self.write_to_file(file_name, value)
     # assumes file is not opened
-    file = File.open(file_name, "a")
+    File.open(file_name, "a") do |file|
     file.puts(value)
-    file.close
+    end
   end
 end

@@ -99,6 +99,11 @@ module Errors
     expected_commit(calling_flag)
   end
 
+  def self.show_incorrect_number_args(flag, expected, actual)
+    puts "Error: incorrect number of arguments for #{flag}. Expected #{expected}, got: #{actual}"
+    exit 128
+  end
+
   def self.show_push_atts_no_atts_error
     puts "Error: trying to add a configuration for push but no attributes are found."
     puts "To add a configuration for push, use \"gg pc -o=<branch-name>\"."
@@ -116,7 +121,7 @@ module Errors
     exit 128
   end
 
-  def self.show_long_commit_invalid_addflg(flag)
+  def self.show_lc_invalid_add_flag
     puts "Error: invalid argument supplied to additional flags."
     exit 128
   end

@@ -8,6 +8,7 @@ require_relative 'lib/errors'
 require_relative 'lib/fileutilities'
 require_relative 'lib/help'
 require_relative 'lib/git'
+require_relative 'lib/base_command'
 
 CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
@@ -285,41 +286,41 @@ def add_and_commit(values, message)
   Git.commit message
 end
 
-def additional_flags_to_commit(args, message, index, flag, long_commit_error_check=false)
+def additional_flags_to_commit(args, message, index, flag, long_commit_check=false)
   return "" if args.empty?
   # starting from the third argument
   case args[index]
     when "-cl"
-      closes(args, message, index, flag, long_commit_error_check)
+      closes(args, message, index, flag, long_commit_check)
     when "-ct"
-      contributes(args, message, index, flag, long_commit_error_check)
+      contributes(args, message, index, flag, long_commit_check)
     when "-sa"
-      see_also(args, message, index, flag, long_commit_error_check)
+      see_also(args, message, index, flag, long_commit_check)
   end
 end
 
-def closes(args, message, index_on_entry, flag, long_commit_error_check)
+def closes(args, message, index_on_entry, flag, long_commit_check)
   # if the arguments are less than the given index plus one argument, throw an error
-  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION, COMMA, long_commit_error_check)
+  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION, COMMA, long_commit_check)
 end
 
 
-def contributes(args, message, index_on_entry, flag, long_commit_error_check)
-  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA, long_commit_error_check)
+def contributes(args, message, index_on_entry, flag, long_commit_check)
+  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA, long_commit_check)
 end
 
-def see_also(args, message, index_on_entry, flag, long_commit_error_check)
-  add_appending_flag(args, message, index_on_entry, flag, SEE_ALSO, ISSUE_MENTION, COMMA, long_commit_error_check)
+def see_also(args, message, index_on_entry, flag, long_commit_check)
+  add_appending_flag(args, message, index_on_entry, flag, SEE_ALSO, ISSUE_MENTION, COMMA, long_commit_check)
 end
 
-def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join, long_commit_error_check)
+def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join, long_commit_check)
 
-  if args.length <= index_on_entry + 1 and not long_commit_error_check
+  if args.length <= index_on_entry + 1 and not long_commit_check
     Errors.show_invalid_size_commit(flag) 
   end
 
-  if args.length <= index_on_entry + 1 and long_commit_error_check
-    Errors.show_long_commit_invalid_addflg(flag)
+  if args.length <= index_on_entry + 1 and long_commit_check
+    Errors.show_lc_invalid_add_flag
   end
 
   refs = Array.new
@@ -342,7 +343,7 @@ def add_appending_flag(args, message, index_on_entry, flag, preceding, before_re
     message = message + ". #{preceding} #{refs}."
   end
   if index < args.length
-    message = additional_flags_to_commit(args, message, index, flag, long_commit_error_check)
+    message = additional_flags_to_commit(args, message, index, flag, long_commit_check)
   end
   message
 end
@@ -722,6 +723,36 @@ def exec_if_clone_command_and_exit(args, clone_flag)
   end
 end
 
+# inspect_custom looks in the custom directory and gathers all ruby files.
+# It then instantiates them, and for each class instantiated, if that class
+# is a command then it executes if the passed flag matches the commands flag.
+# This is only executed if the built-in commands do not match the flag supplied.
+def inspect_custom(args)
+  file_join = File.join(File.expand_path("..", __FILE__), "/custom/*.rb")
+  custom_files = Dir.glob(file_join)
+  before = ObjectSpace.each_object(Class).to_a
+  # Require all files
+  custom_files.each {|file| require file }
+  # Find all the classes now
+  after = ObjectSpace.each_object(Class).to_a
+  # Map on the difference and instantiate
+  instantiations = (after - before)
+  puts "Loaded modules: #{instantiations.inspect}"
+  instantiations = instantiations.map {|klass| klass.new }
+  has_executed = false
+
+  instantiations.each do |instance|
+    # for every instance, if it is a subclass of BaseCommand check flag
+    # if flag coincides, then call execute_command on it.
+    if instance.class <= BaseCommand
+      has_executed = true
+      instance.execute_command(args) if instance.flag == args[0]
+    end
+  end
+  # if nothing has been executed then it is not a valid command.
+  unless has_executed then Errors.show_unsupported_command args[0] end
+end
+
 # cloning is the only operation currently supported that is executed externally, out of a git repository
 exec_if_clone_command_and_exit ARGV, "cn"
 # check if it is a git repository
@@ -803,5 +834,5 @@ case arg
   when "u"
     Git.get_url
   else
-    Errors.show_unsupported_command(arg)
+    inspect_custom(ARGV)
 end
