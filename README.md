@@ -20,8 +20,6 @@ git-god is a tool that can be extended really easily. In order to add your own c
 
 For an example of how to implement such commands see the "gg ig <file-name>" command in the custom/ directory, which allows the user to add files to their .gitignore file. 
 
-For simple
-
 # Features
 The following are the features currently supported by git-god.
 
