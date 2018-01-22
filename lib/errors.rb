@@ -89,9 +89,15 @@ module Errors
     exit(128)
   end
 
+  def self.show_no_help_entry(arg)
+    puts "Error: no help entry found for #{arg}."
+    exit 128
+  end
+
   def self.show_unsupported_command(arg)
     puts "Error: unexpected command \"#{arg}\" found."
-    puts "To view a full list of all arguments to gg, run gg -commands."
+    puts "To view a full list of all arguments to gg, run gg h [flags]."
+    puts "If no argument(s) is supplied, gg h will print the whole help manual."
     exit(128)
   end
 

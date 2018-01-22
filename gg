@@ -9,6 +9,7 @@ require_relative 'lib/fileutilities'
 require_relative 'lib/help'
 require_relative 'lib/git'
 require_relative 'lib/base_command'
+require_relative 'lib/flags'
 
 CONFIG_FILE_EXTENSION = ".git-god"
 TEMP_CONFIG = "temp.git-god"
@@ -59,7 +60,7 @@ def handle_log(args, index)
   args.each_with_index do |arg, i|
     arg_spl = arg.split("=")
     case arg_spl[0]
-      when "-del"
+      when GitGodFlags::LOG_DELIMITER
 
         check_params_del(arg_spl, args)
 
@@ -290,11 +291,11 @@ def additional_flags_to_commit(args, message, index, flag, long_commit_check=fal
   return "" if args.empty?
   # starting from the third argument
   case args[index]
-    when "-cl"
+    when GitGodFlags::CLOSES
       closes(args, message, index, flag, long_commit_check)
-    when "-ct"
+    when GitGodFlags::CONTRIBUTES
       contributes(args, message, index, flag, long_commit_check)
-    when "-sa"
+    when GitGodFlags::SEE_ALSO
       see_also(args, message, index, flag, long_commit_check)
   end
 end
@@ -462,7 +463,7 @@ def push_atts(args)
     value_spl = value.split("=")
     if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
     case value_spl[0]
-      when "-o"
+      when GitGodFlags::CONFIG_ORIGIN
         FileUtilities.write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
       else
         Errors.show_unsupported_command(value_spl[0])
@@ -502,7 +503,7 @@ def pull_atts(args)
     value_spl = value.split("=")
     if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
     case value_spl[0]
-      when "-o"
+      when GitGodFlags::CONFIG_ORIGIN
         FileUtilities.write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
       else
         Errors.show_unsupported_command(value_spl[0])
@@ -525,24 +526,23 @@ def get_key_from_flag(flag)
     Errors.show_non_removable_config flag
   end
   case flag
-    when "l"
+    when GitGodFlags::LOG
       LOGGED
-    when "pc"
+    when GitGodFlags::PUSH_CONFIG
       PUSH_ORIGIN
-    when "plc"
+    when GitGodFlags::PULL_CONFIG
       PULL_ORIGIN
-    when "a"
+    when GitGodFlags::ADD_ALL
       ADD
-    when "i"
+    when GitGodFlags::ISSUE
       ISSUE
-    when "scr", "script"
+    when GitGodFlags::SCRIPT, GitGodFlags::SCRIPT_LONG
       RUN_SCRIPT
   end
 end
 
 def configurable?(flag)
-  flag == "l" or flag == "pc" or flag == "a" or flag == "i" or
-      flag == "plc" or flag == "scr" or flag == "script"
+  GitGodFlags::CONFIGURABLE.include? flag
 end
 
 def issue(args, index)
@@ -560,9 +560,9 @@ def issue(args, index)
   args[index + 1..-1].each do |arg|
     arg_spl = arg.split("=")
     case arg_spl[0]
-      when "-name", "-n"
+      when GitGodFlags::ISSUE_NAME_LONG, GitGodFlags::ISSUE_NAME
         name = arg_spl[1]
-      when "-alias", "-a"
+      when GitGodFlags::ISSUE_ALIAS_LONG, GitGodFlags::ISSUE_ALIAS
         alias_for_name = arg_spl[1]
       else
         values, _, _ = get_values
@@ -772,68 +772,68 @@ end
 arg = ARGV[0]
 index = 0
 case arg
-  when "a"
+  when GitGodFlags::ADD_ALL
     always_add_all
-  when "b"
+  when GitGodFlags::LOCAL_BRANCHES
     Git.get_local_branches
-  when "ba"
+  when GitGodFlags::ALL_BRANCHES
     Git.get_all_branches
-  when "c"
-    commit(ARGV, "c", true)
-  when "cb"
+  when GitGodFlags::COMMIT
+    commit(ARGV, GitGodFlags::COMMIT, true)
+  when GitGodFlags::CURRENT_BRANCH
     # show current branch
     puts Git.get_current_branch
-  when "ch"
-    checkout_branch(ARGV, "ch")
-  when "-commands"
-    Help.print_commands
-  when "cp"
-    commit(ARGV, "cp", true)
+  when GitGodFlags::CHECKOUT
+    checkout_branch(ARGV, GitGodFlags::CHECKOUT)
+  when GitGodFlags::HELP
+    Help.parse_commands ARGV
+  when GitGodFlags::COMMIT_AND_PUSH
+    commit(ARGV, GitGodFlags::COMMIT_AND_PUSH, true)
     # do not expect more arguments
-    push(ARGV, "cp", true, false)
-  when "d"
-    delete_branch(ARGV, "d")
-  when "di"
+    push(ARGV, GitGodFlags::COMMIT_AND_PUSH, true, false)
+  when GitGodFlags::DELETE_BRANCH
+    delete_branch(ARGV, GitGodFlags::DELETE_BRANCH)
+  when GitGodFlags::DIFF
     Git.get_diff
-  when "fa"
+  when GitGodFlags::FETCH_ALL
     Git.fetch_all
-  when "gs"
+  when GitGodFlags::GIT_STATUS
     Git.get_status
-  when "i"
+  when GitGodFlags::ISSUE
     issue(ARGV, index)
-  when "l"
+  when GitGodFlags::LOG
     handle_log(ARGV, index)
-  when "lc"
-    long_commit(ARGV, "lc")
-  when "m"
-    merge(ARGV, "m")
-  when "nb"
-    new_branch(ARGV, "nb")
-  when "op"
+  when GitGodFlags::LONG_COMMIT
+    long_commit(ARGV, GitGodFlags::LONG_COMMIT)
+  when GitGodFlags::MERGE
+    merge(ARGV, GitGodFlags::MERGE)
+  when GitGodFlags::NEW_BRANCH
+    new_branch(ARGV, GitGodFlags::NEW_BRANCH)
+  when GitGodFlags::OPEN_CONFIG_FILE
     system "vim #{CONFIG_FILE}"
-  when "p"
+  when GitGodFlags::PUSH
     # load from configuration unless it is specified
-    push(ARGV, "p", false, true)
-  when "pc"
+    push(ARGV, GitGodFlags::PUSH, false, true)
+  when GitGodFlags::PUSH_CONFIG
     push_atts(ARGV)
-  when "pl"
-    pull(ARGV, "pl")
-  when "plc"
+  when GitGodFlags::PULL
+    pull(ARGV,  GitGodFlags::PULL)
+  when GitGodFlags::PULL_CONFIG
     pull_atts(ARGV)
-  when "prcp"
-    protected_commit_push(ARGV, "prcp")
-  when "r"
+  when GitGodFlags::PROTECTED_COMMIT_PUSH
+    protected_commit_push(ARGV, GitGodFlags::PROTECTED_COMMIT_PUSH)
+  when GitGodFlags::REMOVE_CONFIG
     remove_config(ARGV, index)
-  when "ro"
+  when GitGodFlags::ROOT
     puts Git.get_top_level
-  when "status", "s"
+  when GitGodFlags::STATUS_LONG, GitGodFlags::STATUS
     show_status
-  when "sc"
+  when GitGodFlags::SHOW_COMMIT
     # do not commit, only show message
-    commit(ARGV, "c", false)
-  when "script", "scr"
-    script(ARGV, "script/scr")
-  when "u"
+    commit(ARGV, GitGodFlags::COMMIT, false)
+  when GitGodFlags::SCRIPT_LONG, GitGodFlags::SCRIPT
+    script(ARGV, "#{GitGodFlags::SCRIPT_LONG}/#{GitGodFlags::SCRIPT}")
+  when GitGodFlags::URL
     Git.get_url
   else
     inspect_custom(ARGV)

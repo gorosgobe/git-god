@@ -1,5 +1,8 @@
 module Help
 
+  require_relative 'flags'
+  require_relative 'errors'
+
   def self.print_commands
     puts ""
     puts "List of commands in git-god:"
@@ -65,6 +68,85 @@ module Help
     puts ""
     gg_url
     puts ""
+  end
+
+  def self.parse_commands(args)
+    # arg[0] will be the help flag
+
+    if args.length == 1
+      # only flag is there, so print the whole help
+      print_commands
+      return
+    end
+
+    args[1..-1].each do |arg|
+      print_help_for_arg(arg)
+    end
+  end
+
+  def self.print_help_for_arg(arg)
+    case arg
+      when GitGodFlags::ADD_ALL
+        gg_add_all
+      when GitGodFlags::LOCAL_BRANCHES
+        gg_local_branches
+      when GitGodFlags::ALL_BRANCHES
+        gg_all_branches
+      when GitGodFlags::COMMIT
+        gg_commit
+      when GitGodFlags::CURRENT_BRANCH
+        gg_current_branch
+      when GitGodFlags::CHECKOUT
+        gg_checkout
+      when GitGodFlags::HELP
+        gg_commands
+      when GitGodFlags::COMMIT_AND_PUSH
+        gg_commit_push
+      when GitGodFlags::DELETE_BRANCH
+        gg_delete_branch
+      when GitGodFlags::DIFF
+        gg_diff
+      when GitGodFlags::FETCH_ALL
+        gg_fetch_all
+      when GitGodFlags::GIT_STATUS
+        gg_git_status
+      when GitGodFlags::ISSUE
+        gg_issue
+      when GitGodFlags::LOG
+        gg_log
+      when GitGodFlags::LONG_COMMIT
+        gg_long_commit
+      when GitGodFlags::MERGE
+        gg_merge
+      when GitGodFlags::NEW_BRANCH
+        gg_new_branch
+      when GitGodFlags::PUSH
+        gg_push
+      when GitGodFlags::PUSH_CONFIG
+        gg_push_config
+      when GitGodFlags::PULL
+        gg_pull
+      when GitGodFlags::PULL_CONFIG
+        gg_pull_config
+      when GitGodFlags::PROTECTED_COMMIT_PUSH
+        gg_protected_commit_push
+      when GitGodFlags::REMOVE_CONFIG
+        gg_remove
+      when GitGodFlags::ROOT
+        gg_root
+      when GitGodFlags::STATUS, GitGodFlags::STATUS_LONG
+        gg_status
+      when GitGodFlags::SHOW_COMMIT
+        gg_show_commit
+      when GitGodFlags::SCRIPT, GitGodFlags::SCRIPT_LONG
+        gg_script
+      when GitGodFlags::OPEN_CONFIG_FILE
+        gg_open_config
+      when GitGodFlags::URL
+        gg_url
+      else
+        Errors.show_no_help_entry arg
+      end
   end
 
   def self.gg_long_commit
