@@ -9,6 +9,7 @@ module GitGodFlags
   CURRENT_BRANCH = "cb"
   CHECKOUT = "ch"
   CLOSES = "-cl"
+  CLONE = "cn"
   CONTRIBUTES = "-ct"
   HELP = "h"
   COMMIT_AND_PUSH = "cp"

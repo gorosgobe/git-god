@@ -9,9 +9,11 @@ class GitIgnoreCommand < BaseCommand
 
   GIT_IGNORE = ".gitignore"
 
-  # Range receives the number of arguments accepted, in this case 2, the flag and the file name.
+  # Range receives the number of arguments accepted, in this case 1, the file name.
+  # For cases when a range is necessary, then use Range.new with two arguments specifying
+  # the lower and upper bounds
   def initialize
-    super("ig", Range.new(2, 2))
+    super("ig", Range.new(1))
   end
 
   # args as given by ARGV, arg[0] will be the flag, arg[1] the first argument, and so on.

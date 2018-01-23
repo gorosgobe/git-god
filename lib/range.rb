@@ -1,9 +1,10 @@
 class Range
 
   # Creates a new Range object.
-  def initialize(lower, upper)
+  def initialize(lower, upper = nil)
     @lower = lower
     @upper = upper
+    @upper ||= lower
   end
 
   # Checks whether the given value is within the range.

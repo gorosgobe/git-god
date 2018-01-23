@@ -11,8 +11,8 @@ class BaseCommand
   end
 
   def parse(args)
-    unless @range.within?(args.length)
-      Errors.show_incorrect_number_args @flag, @range.to_s, args.length
+    unless @range.within?(args.length - 1)
+      Errors.show_incorrect_number_args @flag, @range.to_s, args.length - 1
     end
   end
 
