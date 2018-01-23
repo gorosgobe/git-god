@@ -1,7 +1,9 @@
 module FileUtilities
 
+  require_relative 'constants'
+
   def self.delete_line_with_key(key)
-    tmp_file = Tempfile.new(TEMP_CONFIG)
+    tmp_file = Tempfile.new(GitGodConstants::TEMP_CONFIG)
     file = open_config_file
     begin
       file.each_line do |line|
@@ -20,7 +22,7 @@ module FileUtilities
   end
 
   def self.write_to_file_or_overwrite(flag, new_value)
-    tmp_file = Tempfile.new(TEMP_CONFIG)
+    tmp_file = Tempfile.new(GitGodConstants::TEMP_CONFIG)
     file = open_config_file
     has_been_written = false
     begin

@@ -10,34 +10,8 @@ require_relative 'lib/help'
 require_relative 'lib/git'
 require_relative 'lib/base_command'
 require_relative 'lib/flags'
+require_relative 'lib/constants'
 
-CONFIG_FILE_EXTENSION = ".git-god"
-TEMP_CONFIG = "temp.git-god"
-LOGGED = "logged"
-DEFAULT_START_LOG = "["
-DEFAULT_END_LOG = "]"
-ADD = "add"
-ALL = "all"
-PUSH_ORIGIN = "push_origin"
-ISSUE = "issue"
-CURRENT_ISSUE = "current_issue"
-ISSUE_DELIMITER = "#"
-CLOSES = "Closes"
-CONTRIBUTORS = "Contributors:"
-MENTION = "@"
-ISSUE_MENTION = "#"
-PULL_ORIGIN = "pull_origin"
-RUN_SCRIPT = "run_script"
-MASTER = "master"
-COMMA = ", "
-SEE_ALSO = "See also:"
-EXIT_SUCCESS = 0
-
-LOG_PRIORITY = 0
-ADD_PRIORITY = 1
-PUSH_ORIGIN_PRIORITY = 2
-PULL_ORIGIN_PRIORITY = 3
-CURRENT_PRIORITY = 4
 
 def check_params_del(arg_spl, args)
   if args.length == 2
@@ -50,8 +24,8 @@ def check_params_del(arg_spl, args)
 end
 
 def handle_log(args, index)
-  start_del = DEFAULT_START_LOG
-  end_del = DEFAULT_END_LOG
+  start_del = GitGodConstants::DEFAULT_START_LOG
+  end_del = GitGodConstants::DEFAULT_END_LOG
 
   if args.length == 1
     Errors.show_no_log_included_error
@@ -91,7 +65,8 @@ def log(args, index, start_del, end_del)
     log_users += start_del + arg + end_del
   end
 
-  FileUtilities.write_to_file_or_overwrite(LOGGED, "#{LOGGED}=#{log_users}")
+  FileUtilities.write_to_file_or_overwrite(GitGodConstants::LOGGED,
+                                           "#{GitGodConstants::LOGGED}=#{log_users}")
   file.close
 end
 
@@ -106,14 +81,14 @@ def remove_config(args, index)
     args[index + 1..-1].each do |flag|
       key = get_key_from_flag(flag)
       # would delete all issues in case key is issue
-      if key == ISSUE then should_delete_current_issue = true end
+      if key == GitGodConstants::ISSUE then should_delete_current_issue = true end
       file = FileUtilities.delete_line_with_key(key)
       config_file = file
     end
   end
 
   # if all issues are deleted then also delete the current issue symbol
-  if should_delete_current_issue then FileUtilities.delete_line_with_key(CURRENT_ISSUE) end
+  if should_delete_current_issue then FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE) end
   config_file.close
 end
 
@@ -126,19 +101,19 @@ def show_status
     line_array = line.split("=")
     value = line_array[1..-1]
     case line_array[0]
-      when LOGGED
-        info[LOG_PRIORITY] = value
-      when ADD
-        info[ADD_PRIORITY] = value
-      when PUSH_ORIGIN
-        info[PUSH_ORIGIN_PRIORITY] = value
-      when PULL_ORIGIN
-        info[PULL_ORIGIN_PRIORITY] = value
-      when ISSUE
+      when GitGodConstants::LOGGED
+        info[GitGodConstants::LOG_PRIORITY] = value
+      when GitGodConstants::ADD
+        info[GitGodConstants::ADD_PRIORITY] = value
+      when GitGodConstants::PUSH_ORIGIN
+        info[GitGodConstants::PUSH_ORIGIN_PRIORITY] = value
+      when GitGodConstants::PULL_ORIGIN
+        info[GitGodConstants::PULL_ORIGIN_PRIORITY] = value
+      when GitGodConstants::ISSUE
         issues << value
-      when CURRENT_ISSUE
-        info[CURRENT_PRIORITY] = value
-      when RUN_SCRIPT
+      when GitGodConstants::CURRENT_ISSUE
+        info[GitGodConstants::CURRENT_PRIORITY] = value
+      when GitGodConstants::RUN_SCRIPT
         scripts << value
     end
   end
@@ -149,21 +124,21 @@ def show_status
   info = Hash[info.sort]
   info.each do |k, v|
     case k
-      when LOG_PRIORITY
+      when GitGodConstants::LOG_PRIORITY
         puts "logged: #{v[0]}"
-      when ADD_PRIORITY
-        if v[0].length != 0 then puts "add: " + ALL end
-      when PUSH_ORIGIN_PRIORITY
+      when GitGodConstants::ADD_PRIORITY
+        if v[0].length != 0 then puts "add: " + GitGodConstants::ALL end
+      when GitGodConstants::PUSH_ORIGIN_PRIORITY
         puts "pushing to: #{v[0]}"
-      when PULL_ORIGIN_PRIORITY
+      when GitGodConstants::PULL_ORIGIN_PRIORITY
         puts "pulling from: #{v[0]}"
-      when CURRENT_PRIORITY
+      when GitGodConstants::CURRENT_PRIORITY
         puts "current issue: #{v[0]}"
     end
   end
 
   # if there is no current issue because it has been restored or never assigned
-  if info[CURRENT_PRIORITY] == nil then puts "no current issues" end
+  if info[GitGodConstants::CURRENT_PRIORITY] == nil then puts "no current issues" end
 
   # shows the issues
   issues.each do |issue_line|
@@ -189,12 +164,12 @@ def get_values
   config_file.each_line do |line|
     line_array = line.strip.split("=")
     case line_array[0]
-      when ISSUE
+      when GitGodConstants::ISSUE
         # case when it is an issue, need to track name and alias
         alias_for_name = ""
         if line_array[2] != nil then alias_for_name = line_array[2] end
         issues << line_array[1] + "=" + alias_for_name
-      when RUN_SCRIPT
+      when GitGodConstants::RUN_SCRIPT
         scripts << line_array[1]
       else
         info[line_array[0]] = line_array[1]
@@ -221,7 +196,7 @@ end
 
 def add_issue_to_msg(issue, message)
   if defined_val?(issue)
-    message += "(" + ISSUE_DELIMITER + issue.strip + ") "
+    message += "(" + GitGodConstants::ISSUE_DELIMITER + issue.strip + ") "
   end
   message
 end
@@ -234,8 +209,8 @@ def add_log_users_to_msg(log_users, message)
 end
 
 def add_issue_and_log(values)
-  log_users = values[LOGGED]
-  issue = values[CURRENT_ISSUE]
+  log_users = values[GitGodConstants::LOGGED]
+  issue = values[GitGodConstants::CURRENT_ISSUE]
 
   message = ""
   message = add_issue_to_msg(issue, message)
@@ -278,7 +253,7 @@ def generate_msg_for_long_commit(values, message, additional_flags)
 end
 
 def add_and_commit(values, message)
-  add_atts = values[ADD]
+  add_atts = values[GitGodConstants::ADD]
   if defined_val?(add_atts)
     puts "adding all"
     Git.add_all
@@ -303,16 +278,22 @@ end
 
 def closes(args, message, index_on_entry, flag, long_commit_check)
   # if the arguments are less than the given index plus one argument, throw an error
-  add_appending_flag(args, message, index_on_entry, flag, CLOSES, ISSUE_MENTION, COMMA, long_commit_check)
+  add_appending_flag(args, message, index_on_entry, flag,
+                     GitGodConstants::CLOSES, GitGodConstants::ISSUE_MENTION,
+                     GitGodConstants::COMMA, long_commit_check)
 end
 
 
 def contributes(args, message, index_on_entry, flag, long_commit_check)
-  add_appending_flag(args, message, index_on_entry, flag, CONTRIBUTORS, MENTION, COMMA, long_commit_check)
+  add_appending_flag(args, message, index_on_entry, flag,
+                     GitGodConstants::CONTRIBUTORS, GitGodConstants::MENTION,
+                     GitGodConstants::COMMA, long_commit_check)
 end
 
 def see_also(args, message, index_on_entry, flag, long_commit_check)
-  add_appending_flag(args, message, index_on_entry, flag, SEE_ALSO, ISSUE_MENTION, COMMA, long_commit_check)
+  add_appending_flag(args, message, index_on_entry, flag,
+                     GitGodConstants::SEE_ALSO, GitGodConstants::ISSUE_MENTION,
+                     GitGodConstants::COMMA, long_commit_check)
 end
 
 def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join, long_commit_check)
@@ -372,7 +353,7 @@ def push(args, flag, load_configuration, less_than_two_args)
   values, _, scripts = get_values
   # if always load from configuration then it is a -p from -cp
   if load_configuration
-    push_attributes = values[PUSH_ORIGIN]
+    push_attributes = values[GitGodConstants::PUSH_ORIGIN]
   else
     # if we do not need to load from configuration, and there is a branch push to
     # that branch. If there is not a branch, then it will be nil, and will default
@@ -382,7 +363,7 @@ def push(args, flag, load_configuration, less_than_two_args)
     else
       # there is only one argument, get from configuration
       # if configuration is nil then will default to master below
-      push_attributes = values[PUSH_ORIGIN]
+      push_attributes = values[GitGodConstants::PUSH_ORIGIN]
     end
   end
 
@@ -393,7 +374,7 @@ def push(args, flag, load_configuration, less_than_two_args)
 
     execute_script script
 
-    unless $?.exitstatus == EXIT_SUCCESS
+    unless $?.exitstatus == GitGodConstants::EXIT_SUCCESS
       puts "Script: #{script} failed with exit code #{$?.exitstatus}"
       # only add the exit status to the array if it was non zero
       exit_statuses << $?.exitstatus
@@ -409,7 +390,7 @@ def push(args, flag, load_configuration, less_than_two_args)
   # push after all scripts have run and exit code was success
   if not defined_val?(push_attributes)
     puts "pushing to master"
-    Git.push_origin MASTER
+    Git.push_origin GitGodConstants::MASTER
   else
     puts "pushing to #{push_attributes}"
     Git.push_origin push_attributes
@@ -423,7 +404,7 @@ def script(args, flag)
   end
 
   # write the runnable script with the arguments directly to file
-  FileUtilities.write_to_file(CONFIG_FILE, "#{RUN_SCRIPT}=#{args[1..-1].join(" ")}")
+  FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::RUN_SCRIPT}=#{args[1..-1].join(" ")}")
 end
 
 def execute_script(script)
@@ -465,7 +446,8 @@ def push_atts(args)
     if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
     case value_spl[0]
       when GitGodFlags::CONFIG_ORIGIN
-        FileUtilities.write_to_file_or_overwrite(PUSH_ORIGIN, "#{PUSH_ORIGIN}=#{value_spl[1]}")
+        FileUtilities.write_to_file_or_overwrite(GitGodConstants::PUSH_ORIGIN,
+                                                 "#{GitGodConstants::PUSH_ORIGIN}=#{value_spl[1]}")
       else
         Errors.show_unsupported_command(value_spl[0])
     end
@@ -479,7 +461,7 @@ def pull(args, flag)
 
   if args.length == 1
     # grab pull origin from configuration
-    pull_origin = values[PULL_ORIGIN]
+    pull_origin = values[GitGodConstants::PULL_ORIGIN]
   else
     # length must be two, therefore use the argument given as origin
     pull_origin = args[1]
@@ -488,7 +470,7 @@ def pull(args, flag)
   unless defined_val?(pull_origin)
     # if not defined in configuration file and not given in argument to flag
     # then choose master by default
-    pull_origin = MASTER
+    pull_origin = GitGodConstants::MASTER
   end
 
   puts "pulling from #{pull_origin}"
@@ -505,7 +487,8 @@ def pull_atts(args)
     if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
     case value_spl[0]
       when GitGodFlags::CONFIG_ORIGIN
-        FileUtilities.write_to_file_or_overwrite(PULL_ORIGIN, "#{PULL_ORIGIN}=#{value_spl[1]}")
+        FileUtilities.write_to_file_or_overwrite(GitGodConstants::PULL_ORIGIN,
+                                                 "#{GitGodConstants::PULL_ORIGIN}=#{value_spl[1]}")
       else
         Errors.show_unsupported_command(value_spl[0])
     end
@@ -519,7 +502,8 @@ def defined_val?(val)
 end
 
 def always_add_all
-  FileUtilities.write_to_file_or_overwrite(ADD, "#{ADD}=#{ALL}")
+  FileUtilities.write_to_file_or_overwrite(GitGodConstants::ADD,
+                                           "#{GitGodConstants::ADD}=#{GitGodConstants::ALL}")
 end
 
 def get_key_from_flag(flag)
@@ -528,17 +512,17 @@ def get_key_from_flag(flag)
   end
   case flag
     when GitGodFlags::LOG
-      LOGGED
+      GitGodConstants::LOGGED
     when GitGodFlags::PUSH_CONFIG
-      PUSH_ORIGIN
+      GitGodConstants::PUSH_ORIGIN
     when GitGodFlags::PULL_CONFIG
-      PULL_ORIGIN
+      GitGodConstants::PULL_ORIGIN
     when GitGodFlags::ADD_ALL
-      ADD
+      GitGodConstants::ADD
     when GitGodFlags::ISSUE
-      ISSUE
+      GitGodConstants::ISSUE
     when GitGodFlags::SCRIPT, GitGodFlags::SCRIPT_LONG
-      RUN_SCRIPT
+      GitGodConstants::RUN_SCRIPT
   end
 end
 
@@ -552,7 +536,7 @@ def issue(args, index)
   end
   # if length is one, then we want to commit without issue
   if args.length == 1
-    FileUtilities.delete_line_with_key(CURRENT_ISSUE)
+    FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE)
     exit(0)
   end
   name = ""
@@ -567,13 +551,14 @@ def issue(args, index)
         alias_for_name = arg_spl[1]
       else
         values, _, _ = get_values
-        if arg_spl[0][1..-1] == values[CURRENT_ISSUE]
+        if arg_spl[0][1..-1] == values[GitGodConstants::CURRENT_ISSUE]
           exit(0)
         end
         # it must be an alias or name
         name = get_name_from_alias(arg_spl[0][1..-1].strip)
         if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
-        FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+        FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                                 "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
         puts "Current issue: #{name}"
         exit(0) # job is done, no need to add any issues
     end
@@ -583,11 +568,13 @@ def issue(args, index)
 
   # writeToFile leaves config_file closed
   if alias_for_name == nil
-    FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}")
+    FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                             "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
     FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
   else
-    FileUtilities.write_to_file_or_overwrite(CURRENT_ISSUE, "#{CURRENT_ISSUE}=#{name}=#{alias_for_name}")
-    FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}=#{alias_for_name}")
+    FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                             "#{GitGodConstants::CURRENT_ISSUE}=#{name}=#{alias_for_name}")
+    FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::ISSUE}=#{name}=#{alias_for_name}")
   end
 
 end
@@ -597,7 +584,7 @@ def get_name_from_alias(alias_or_name)
   begin
     config_file.each_line do |line|
       line_spl = line.strip.split("=")
-      next if line_spl[0] != ISSUE
+      next if line_spl[0] != GitGodConstants::ISSUE
       # line is an issue
       if alias_or_name == line_spl[1] or alias_or_name == line_spl[2]
         return line_spl[1]
@@ -617,7 +604,7 @@ end
 def check_if_git_repo
   # suppressing the output of git status
   system "git", "status", :out => File::NULL, :err => File::NULL
-  if $?.exitstatus != EXIT_SUCCESS
+  if $?.exitstatus != GitGodConstants::EXIT_SUCCESS
     Errors.show_not_git_repo_error
   end
 end
@@ -720,7 +707,7 @@ end
 def exec_if_clone_command_and_exit(args, clone_flag)
   if args[0] == clone_flag
     clone(args, clone_flag)
-    exit EXIT_SUCCESS
+    exit GitGodConstants::EXIT_SUCCESS
   end
 end
 
@@ -762,7 +749,7 @@ exec_if_clone_command_and_exit ARGV, GitGodFlags::CLONE
 check_if_git_repo
 
 top_level = Git.get_top_level
-CONFIG_FILE = File.join(top_level.strip, CONFIG_FILE_EXTENSION)
+CONFIG_FILE = File.join(top_level.strip, GitGodConstants::CONFIG_FILE_EXTENSION)
 
 # create configuration file if it does not exist
 unless File.exist?(CONFIG_FILE)
