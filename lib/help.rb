@@ -2,6 +2,7 @@ module Help
 
   require_relative 'flags'
   require_relative 'errors'
+  require_relative 'constants'
 
   def self.print_commands
     puts ""
@@ -214,7 +215,7 @@ module Help
 
   def self.gg_open_config
     puts "gg op"
-    puts "Opens the configuration file #{CONFIG_FILE_EXTENSION} in VIM. Modify at own risk."
+    puts "Opens the configuration file #{GitGodConstants::CONFIG_FILE_EXTENSION} in VIM. Modify at own risk."
   end
 
   def self.gg_new_branch
