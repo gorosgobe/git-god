@@ -5,6 +5,7 @@ A script that allows to save configurations for easier, more meaningful, faster 
 git-god allows to set suites of scripts running before every push i.e. preventing pushes that break test cases. It also provides utilities to configure pulling and pushing to/from branches, commit messages that are clearer and faster, and gives shortcuts for frequently used git commands.
 
 # Install
+Make sure you have Ruby installed. If you don't, follow the instructions go to https://www.ruby-lang.org/en/documentation/installation/.
 
 Add the following line to the bottom of your ~/.bashrc file:
 ```
