@@ -97,7 +97,7 @@ module Errors
   def self.show_unsupported_command(arg)
     puts "Error: unexpected command \"#{arg}\" found."
     puts "To view a full list of all arguments to gg, run gg h [flags]."
-    puts "If no argument(s) is supplied, gg h will print the whole help manual."
+    puts "If no argument is supplied, gg h will print the whole help manual."
     exit(128)
   end
 

@@ -407,33 +407,13 @@ def script(args, flag)
   FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::RUN_SCRIPT}=#{args[1..-1].join(" ")}")
 end
 
+# executes script from root directory
 def execute_script(script)
-  if executable_script? script
-    # then we cd into the root git directory and run it from there
-    Dir.chdir(Git.get_top_level.strip) do
-      # if root contains script execute
-      return unless directory_contains? script
-      system script
-    end
-  else
-    # it is a normal command, execute normally
-    # prevent errors from ruby when command is malformed
+
+  Dir.chdir Git.get_top_level.strip do
     system script
   end
 
-end
-
-def directory_contains?(script)
-  Find.find(Dir.pwd) do |entry|
-    # it is an executable script
-    return true if entry == File.absolute_path(script[2..-1])
-  end
-  Errors.show_script_not_in_root_error script, false
-  false
-end
-
-def executable_script?(script)
-  script[0..1] == "./"
 end
 
 def push_atts(args)

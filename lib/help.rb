@@ -23,8 +23,6 @@ module Help
     puts ""
     gg_clone
     puts ""
-    gg_commands
-    puts ""
     gg_commit_push
     puts ""
     gg_delete_branch
