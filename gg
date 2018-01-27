@@ -450,7 +450,7 @@ def new_branch(args, flag)
   Utilities.only_allow_one_arg args, flag
   branch_name = args[1]
   puts "creating new branch: #{branch_name}"
-  Git.checkout branch_name
+  Git.new_branch branch_name
 end
 
 def checkout_branch(args, flag)

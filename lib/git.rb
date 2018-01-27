@@ -60,8 +60,12 @@ module Git
     system "git commit -m \"#{message}\""
   end
 
-  def self.checkout(target_branch)
+  def self.new_branch(target_branch)
     system "git checkout -b #{target_branch}"
+  end
+
+  def self.checkout(target_branch)
+    system "git checkout #{target_branch}"
   end
 
   def self.clone(repo)
