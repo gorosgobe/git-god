@@ -1,4 +1,4 @@
-class GitIgnoreCommand < BaseCommand
+class GitStatusNice < BaseCommand
 
   require_relative '../lib/base_command'
 

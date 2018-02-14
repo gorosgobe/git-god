@@ -1,4 +1,4 @@
-class GitIgnoreCommand < BaseCommand
+class GitLogNice < BaseCommand
 
   require_relative '../lib/base_command'
 
