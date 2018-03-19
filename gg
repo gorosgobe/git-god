@@ -1,664 +1,654 @@
 #!/usr/bin/env ruby
 
-require 'find'
-require 'tempfile'
-require 'set'
+  require 'find'
+  require 'tempfile'
+  require 'set'
 
-require_relative 'lib/errors'
-require_relative 'lib/fileutilities'
-require_relative 'lib/help'
-require_relative 'lib/git'
-require_relative 'lib/base_command'
-require_relative 'lib/flags'
-require_relative 'lib/constants'
-require_relative 'lib/utilities'
+  require_relative 'lib/errors'
+  require_relative 'lib/fileutilities'
+  require_relative 'lib/help'
+  require_relative 'lib/git'
+  require_relative 'lib/base_command'
+  require_relative 'lib/flags'
+  require_relative 'lib/constants'
+  require_relative 'lib/utilities'
 
 
+  def handle_log(args, index)
+    start_del = GitGodConstants::DEFAULT_START_LOG
+    end_del = GitGodConstants::DEFAULT_END_LOG
 
-def handle_log(args, index)
-  start_del = GitGodConstants::DEFAULT_START_LOG
-  end_del = GitGodConstants::DEFAULT_END_LOG
+    if args.length == 1
+      Errors.show_no_log_included_error
+    end
 
-  if args.length == 1
-    Errors.show_no_log_included_error
+    args.each_with_index do |arg, i|
+      arg_spl = arg.split("=")
+      case arg_spl[0]
+        when GitGodFlags::LOG_DELIMITER
+
+          Utilities.check_params_del(arg_spl, args)
+
+          # only one character provided, use for both
+          if arg_spl[1].length == 1
+            log(args, i, arg_spl[1][0], arg_spl[1][0])
+            return
+          elsif arg_spl[1].length == 2 then
+            log(args, i, arg_spl[1][0], arg_spl[1][1])
+            return
+          else
+            Errors.show_invalid_delimiter_error
+          end
+      end
+    end
+
+    log(args, index, start_del, end_del)
   end
 
-  args.each_with_index do |arg, i|
-    arg_spl = arg.split("=")
-    case arg_spl[0]
-      when GitGodFlags::LOG_DELIMITER
 
-        Utilities.check_params_del(arg_spl, args)
+  def log(args, index, start_del, end_del)
+    # find the previous logged info
+    log_users = ""
+    file = open_config_file
 
-        # only one character provided, use for both
-        if arg_spl[1].length == 1
-          log(args, i, arg_spl[1][0], arg_spl[1][0])
-          return
-        elsif arg_spl[1].length == 2 then
-          log(args, i, arg_spl[1][0], arg_spl[1][1])
-          return
-        else
-          Errors.show_invalid_delimiter_error
+    args[index + 1..-1].each do |arg|
+      puts "Logged: #{arg}"
+      log_users += start_del + arg + end_del
+    end
+
+    FileUtilities.write_to_file_or_overwrite(GitGodConstants::LOGGED,
+                                             "#{GitGodConstants::LOGGED}=#{log_users}")
+    file.close
+  end
+
+  def remove_config(args, index)
+    config_file = open_config_file
+    should_delete_current_issue = false
+    if args.length == 1
+      # flag is only -r, delete whole configuration
+      if File.exist?(CONFIG_FILE) then
+        File.delete(CONFIG_FILE)
+      end
+    else
+      # delete specific attributes
+      args[index + 1..-1].each do |flag|
+        key = Utilities.get_key_from_flag(flag)
+        # would delete all issues in case key is issue
+        if key == GitGodConstants::ISSUE then
+          should_delete_current_issue = true
         end
+        file = FileUtilities.delete_line_with_key(key)
+        config_file = file
+      end
     end
-  end
 
-  log(args, index, start_del, end_del)
-end
-
-
-def log(args, index, start_del, end_del)
-  # find the previous logged info
-  log_users = ""
-  file = open_config_file
-
-  args[index + 1..-1].each do |arg|
-    puts "Logged: #{arg}"
-    log_users += start_del + arg + end_del
-  end
-
-  FileUtilities.write_to_file_or_overwrite(GitGodConstants::LOGGED,
-                                           "#{GitGodConstants::LOGGED}=#{log_users}")
-  file.close
-end
-
-def remove_config(args, index)
-  config_file = open_config_file
-  should_delete_current_issue = false
-  if args.length == 1
-    # flag is only -r, delete whole configuration
-    if File.exist?(CONFIG_FILE) then File.delete(CONFIG_FILE) end
-  else
-    # delete specific attributes
-    args[index + 1..-1].each do |flag|
-      key = Utilities.get_key_from_flag(flag)
-      # would delete all issues in case key is issue
-      if key == GitGodConstants::ISSUE then should_delete_current_issue = true end
-      file = FileUtilities.delete_line_with_key(key)
-      config_file = file
+    # if all issues are deleted then also delete the current issue symbol
+    if should_delete_current_issue then
+      FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE)
     end
+    config_file.close
   end
 
-  # if all issues are deleted then also delete the current issue symbol
-  if should_delete_current_issue then FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE) end
-  config_file.close
-end
-
-def show_status
-  info = Hash.new
-  issues = Set.new
-  scripts = Array.new
-  config_file = open_config_file
-  config_file.each_line do |line|
-    line_array = line.split("=")
-    value = line_array[1..-1]
-    case line_array[0]
-      when GitGodConstants::LOGGED
-        info[GitGodConstants::LOG_PRIORITY] = value
-      when GitGodConstants::ADD
-        info[GitGodConstants::ADD_PRIORITY] = value
-      when GitGodConstants::PUSH_ORIGIN
-        info[GitGodConstants::PUSH_ORIGIN_PRIORITY] = value
-      when GitGodConstants::PULL_ORIGIN
-        info[GitGodConstants::PULL_ORIGIN_PRIORITY] = value
-      when GitGodConstants::ISSUE
-        issues << value
-      when GitGodConstants::CURRENT_ISSUE
-        info[GitGodConstants::CURRENT_PRIORITY] = value
-      when GitGodConstants::RUN_SCRIPT
-        scripts << value
+  def show_status
+    info = Hash.new
+    issues = Set.new
+    scripts = Array.new
+    config_file = open_config_file
+    config_file.each_line do |line|
+      line_array = line.split("=")
+      value = line_array[1..-1]
+      case line_array[0]
+        when GitGodConstants::LOGGED
+          info[GitGodConstants::LOG_PRIORITY] = value
+        when GitGodConstants::ADD
+          info[GitGodConstants::ADD_PRIORITY] = value
+        when GitGodConstants::PUSH_ORIGIN
+          info[GitGodConstants::PUSH_ORIGIN_PRIORITY] = value
+        when GitGodConstants::PULL_ORIGIN
+          info[GitGodConstants::PULL_ORIGIN_PRIORITY] = value
+        when GitGodConstants::ISSUE
+          issues << value
+        when GitGodConstants::CURRENT_ISSUE
+          info[GitGodConstants::CURRENT_PRIORITY] = value
+        when GitGodConstants::RUN_SCRIPT
+          scripts << value
+      end
     end
-  end
 
-  config_file.close
+    config_file.close
 
-  # shows single line configurable attributes, overridable
-  info = Hash[info.sort]
-  info.each do |k, v|
-    case k
-      when GitGodConstants::LOG_PRIORITY
-        puts "logged: #{v[0]}"
-      when GitGodConstants::ADD_PRIORITY
-        if v[0].length != 0 then puts "add: " + GitGodConstants::ALL end
-      when GitGodConstants::PUSH_ORIGIN_PRIORITY
-        puts "pushing to: #{v[0]}"
-      when GitGodConstants::PULL_ORIGIN_PRIORITY
-        puts "pulling from: #{v[0]}"
-      when GitGodConstants::CURRENT_PRIORITY
-        puts "current issue: #{v[0]}"
+    # shows single line configurable attributes, overridable
+    info = Hash[info.sort]
+    info.each do |k, v|
+      case k
+        when GitGodConstants::LOG_PRIORITY
+          puts "logged: #{v[0]}"
+        when GitGodConstants::ADD_PRIORITY
+          if v[0].length != 0 then
+            puts "add: " + GitGodConstants::ALL
+          end
+        when GitGodConstants::PUSH_ORIGIN_PRIORITY
+          puts "pushing to: #{v[0]}"
+        when GitGodConstants::PULL_ORIGIN_PRIORITY
+          puts "pulling from: #{v[0]}"
+        when GitGodConstants::CURRENT_PRIORITY
+          puts "current issue: #{v[0]}"
+      end
     end
+
+    # if there is no current issue because it has been restored or never assigned
+    if info[GitGodConstants::CURRENT_PRIORITY] == nil then
+      puts "no current issues"
+    end
+
+    # shows the issues
+    issues.each do |issue_line|
+      if issue_line.length == 1
+        puts "issue: #{issue_line[0]}"
+      else
+        puts "issue: #{issue_line[0]}, alias: #{issue_line[1]}"
+      end
+    end
+
+    # shows the scripts to be run before pushing anything
+    scripts.each do |script_line|
+      puts "script: #{script_line[0]}"
+    end
+
   end
 
-  # if there is no current issue because it has been restored or never assigned
-  if info[GitGodConstants::CURRENT_PRIORITY] == nil then puts "no current issues" end
+  def open_config_file
+    File.open(CONFIG_FILE, "r+")
+  end
 
-  # shows the issues
-  issues.each do |issue_line|
-    if issue_line.length == 1
-      puts "issue: #{issue_line[0]}"
+  def commit(args, flag, should_commit)
+    values, _, _ = Utilities.get_values
+
+    message = generate_msg_for_commit(values, args, flag, should_commit)
+    # if the flag is set, commit, otherwise just print the commit
+    if should_commit
+      Utilities.add_and_commit(values, message)
     else
-      puts "issue: #{issue_line[0]}, alias: #{issue_line[1]}"
+      puts message
     end
   end
 
-  # shows the scripts to be run before pushing anything
-  scripts.each do |script_line|
-    puts "script: #{script_line[0]}"
+  def generate_msg_for_commit(values, args, flag, should_commit)
+
+    if should_commit and args.length < 2
+      Errors.show_invalid_size_commit(flag)
+    end
+
+    # if there are enough arguments, check that the first one to the commit flag
+    # is not a flag
+    if args.length > 1 and Utilities.flag?(args[1])
+      Errors.show_flag_expect_message_error(flag, args[1])
+    end
+
+    message = Utilities.add_issue_and_log values
+    message += " " + args[1].to_s
+    if args.length > 2
+      # delete added whitespace above for correct display of first flag
+      if args[1].to_s.length == 0 then
+        message = message[0..-2]
+      end
+      # commit message might have additional flags
+      # starting from third argument
+      message = additional_flags_to_commit(args, message, 2, flag)
+    end
+    message
   end
 
-end
-
-def open_config_file
-  File.open(CONFIG_FILE, "r+")
-end
-
-def commit(args, flag, should_commit)
-  values, _, _ = Utilities.get_values
-
-  message = generate_msg_for_commit(values, args, flag, should_commit)
-  # if the flag is set, commit, otherwise just print the commit
-  if should_commit
-    Utilities.add_and_commit(values, message)
-  else
-    puts message
-  end
-end
-
-def generate_msg_for_commit(values, args, flag, should_commit)
-
-  if should_commit and args.length < 2
-    Errors.show_invalid_size_commit(flag)
+  def generate_msg_for_long_commit(values, message, additional_flags)
+    msg = Utilities.add_issue_and_log values
+    msg = msg + "\n" + message
+    addit_flags = additional_flags_to_commit(additional_flags.split(" "), "", 0,
+                                             GitGodFlags::LONG_COMMIT, true)[2..-1]
+    # if it is nil because of range from above then convert to empty string
+    addit_flags ||= ""
+    # specific array range to remove the full stop auto generated by the additional flags function
+    (msg + "\n" + addit_flags)
   end
 
-  # if there are enough arguments, check that the first one to the commit flag
-  # is not a flag
-  if args.length > 1 and Utilities.flag?(args[1])
-    Errors.show_flag_expect_message_error(flag, args[1])
+  def additional_flags_to_commit(args, message, index, flag, long_commit_check = false)
+    return "" if args.empty?
+    # starting from the third argument
+    case args[index]
+      when GitGodFlags::CLOSES
+        closes(args, message, index, flag, long_commit_check)
+      when GitGodFlags::CONTRIBUTES
+        contributes(args, message, index, flag, long_commit_check)
+      when GitGodFlags::SEE_ALSO
+        see_also(args, message, index, flag, long_commit_check)
+    end
   end
 
-  message = Utilities.add_issue_and_log values
-  message += " " + args[1].to_s
-  if args.length > 2
-    # delete added whitespace above for correct display of first flag
-    if args[1].to_s.length == 0 then message = message[0..-2] end
-    # commit message might have additional flags
-    # starting from third argument
-    message = additional_flags_to_commit(args, message, 2, flag)
-  end
-  message
-end
-
-def generate_msg_for_long_commit(values, message, additional_flags)
-  msg = Utilities.add_issue_and_log values
-  msg = msg + "\n" + message
-  addit_flags = additional_flags_to_commit(additional_flags.split(" "), "", 0,
-                                           GitGodFlags::LONG_COMMIT, true)[2..-1]
-  # if it is nil because of range from above then convert to empty string
-  addit_flags ||= ""
-  # specific array range to remove the full stop auto generated by the additional flags function
-  (msg + "\n" + addit_flags)
-end
-
-def additional_flags_to_commit(args, message, index, flag, long_commit_check=false)
-  return "" if args.empty?
-  # starting from the third argument
-  case args[index]
-    when GitGodFlags::CLOSES
-      closes(args, message, index, flag, long_commit_check)
-    when GitGodFlags::CONTRIBUTES
-      contributes(args, message, index, flag, long_commit_check)
-    when GitGodFlags::SEE_ALSO
-      see_also(args, message, index, flag, long_commit_check)
-  end
-end
-
-def closes(args, message, index_on_entry, flag, long_commit_check)
-  # if the arguments are less than the given index plus one argument, throw an error
-  add_appending_flag(args, message, index_on_entry, flag,
-                     GitGodConstants::CLOSES, GitGodConstants::ISSUE_MENTION,
-                     GitGodConstants::COMMA, long_commit_check)
-end
-
-
-def contributes(args, message, index_on_entry, flag, long_commit_check)
-  add_appending_flag(args, message, index_on_entry, flag,
-                     GitGodConstants::CONTRIBUTORS, GitGodConstants::MENTION,
-                     GitGodConstants::COMMA, long_commit_check)
-end
-
-def see_also(args, message, index_on_entry, flag, long_commit_check)
-  add_appending_flag(args, message, index_on_entry, flag,
-                     GitGodConstants::SEE_ALSO, GitGodConstants::ISSUE_MENTION,
-                     GitGodConstants::COMMA, long_commit_check)
-end
-
-def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join, long_commit_check)
-
-  if args.length <= index_on_entry + 1 and not long_commit_check
-    Errors.show_invalid_size_commit(flag) 
+  def closes(args, message, index_on_entry, flag, long_commit_check)
+    # if the arguments are less than the given index plus one argument, throw an error
+    add_appending_flag(args, message, index_on_entry, flag,
+                       GitGodConstants::CLOSES, GitGodConstants::ISSUE_MENTION,
+                       GitGodConstants::COMMA, long_commit_check)
   end
 
-  if args.length <= index_on_entry + 1 and long_commit_check
-    Errors.show_lc_invalid_add_flag
+
+  def contributes(args, message, index_on_entry, flag, long_commit_check)
+    add_appending_flag(args, message, index_on_entry, flag,
+                       GitGodConstants::CONTRIBUTORS, GitGodConstants::MENTION,
+                       GitGodConstants::COMMA, long_commit_check)
   end
 
-  refs = Array.new
-  # start at argument
-  index = index_on_entry + 1
-  while index < args.length and not Utilities.flag?(args[index]) do
-    refs << args[index]
-    index += 1
-  end
-  refs = Utilities.add_to_start(refs, before_ref)
-  refs = refs.join(join)
-  stripped_msg = args[1].strip
-  # if the last character is a full stop or the message is empty then dont add
-  # another full stop
-
-  total_msg_strip = message.strip
-  if total_msg_strip[total_msg_strip.length - 1] == '.' or stripped_msg.length == 0
-    message = message + " #{preceding} #{refs}."
-  else
-    message = message + ". #{preceding} #{refs}."
-  end
-  if index < args.length
-    message = additional_flags_to_commit(args, message, index, flag, long_commit_check)
-  end
-  message
-end
-
-def push(args, flag, load_configuration, less_than_two_args)
-
-  if less_than_two_args and args.length > 2
-    Errors.show_too_many_args_error(flag, 1, args.length - 1)
+  def see_also(args, message, index_on_entry, flag, long_commit_check)
+    add_appending_flag(args, message, index_on_entry, flag,
+                       GitGodConstants::SEE_ALSO, GitGodConstants::ISSUE_MENTION,
+                       GitGodConstants::COMMA, long_commit_check)
   end
 
-  values, _, scripts = Utilities.get_values
-  # if always load from configuration then it is a -p from -cp
-  if load_configuration
-    push_attributes = values[GitGodConstants::PUSH_ORIGIN]
-  else
-    # if we do not need to load from configuration, and there is a branch push to
-    # that branch. If there is not a branch, then it will be nil, and will default
-    # to master
-    if args.length == 2
-      push_attributes = args[1]
+  def add_appending_flag(args, message, index_on_entry, flag, preceding, before_ref, join, long_commit_check)
+
+    if args.length <= index_on_entry + 1 and not long_commit_check
+      Errors.show_invalid_size_commit(flag)
+    end
+
+    if args.length <= index_on_entry + 1 and long_commit_check
+      Errors.show_lc_invalid_add_flag
+    end
+
+    refs = Array.new
+    # start at argument
+    index = index_on_entry + 1
+    while index < args.length and not Utilities.flag?(args[index]) do
+      refs << args[index]
+      index += 1
+    end
+    refs = Utilities.add_to_start(refs, before_ref)
+    refs = refs.join(join)
+    stripped_msg = args[1].strip
+    # if the last character is a full stop or the message is empty then dont add
+    # another full stop
+
+    total_msg_strip = message.strip
+    if total_msg_strip[total_msg_strip.length - 1] == '.' or stripped_msg.length == 0
+      message = message + " #{preceding} #{refs}."
     else
-      # there is only one argument, get from configuration
-      # if configuration is nil then will default to master below
+      message = message + ". #{preceding} #{refs}."
+    end
+    if index < args.length
+      message = additional_flags_to_commit(args, message, index, flag, long_commit_check)
+    end
+    message
+  end
+
+  def push(args, flag, load_configuration, less_than_two_args)
+
+    if less_than_two_args and args.length > 2
+      Errors.show_too_many_args_error(flag, 1, args.length - 1)
+    end
+
+    values, _, scripts = Utilities.get_values
+    # if always load from configuration then it is a -p from -cp
+    if load_configuration
       push_attributes = values[GitGodConstants::PUSH_ORIGIN]
+    else
+      # if we do not need to load from configuration, and there is a branch push to
+      # that branch. If there is not a branch, then it will be nil, and will default
+      # to master
+      if args.length == 2
+        push_attributes = args[1]
+      else
+        # there is only one argument, get from configuration
+        # if configuration is nil then will default to master below
+        push_attributes = values[GitGodConstants::PUSH_ORIGIN]
+      end
+    end
+
+    exit_statuses = Array.new
+    # execute every script
+    scripts.each do |script|
+      puts "Script: #{script}"
+
+      execute_script script
+
+      unless $?.exitstatus == GitGodConstants::EXIT_SUCCESS
+        puts "Script: #{script} failed with exit code #{$?.exitstatus}"
+        # only add the exit status to the array if it was non zero
+        exit_statuses << $?.exitstatus
+      end
+      puts ""
+    end
+
+    # if it is not empty, then some script returned a non zero exit code, so do not push
+    unless exit_statuses.empty?
+      Errors.show_push_aborted
+    end
+
+    # push after all scripts have run and exit code was success
+    if not Utilities.defined_val?(push_attributes)
+      puts "pushing to master"
+      Git.push_origin GitGodConstants::MASTER
+    else
+      puts "pushing to #{push_attributes}"
+      Git.push_origin push_attributes
     end
   end
 
-  exit_statuses = Array.new
-  # execute every script
-  scripts.each do |script|
-    puts "Script: #{script}"
+  def script(args, flag)
 
-    execute_script script
-
-    unless $?.exitstatus == GitGodConstants::EXIT_SUCCESS
-      puts "Script: #{script} failed with exit code #{$?.exitstatus}"
-      # only add the exit status to the array if it was non zero
-      exit_statuses << $?.exitstatus
+    if args.length == 1
+      Errors.show_at_least_args_error(flag, 1, 0)
     end
-    puts ""
+
+    # write the runnable script with the arguments directly to file
+    FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::RUN_SCRIPT}=#{args[1..-1].join(" ")}")
   end
-
-  # if it is not empty, then some script returned a non zero exit code, so do not push
-  unless exit_statuses.empty?
-    Errors.show_push_aborted
-  end
-
-  # push after all scripts have run and exit code was success
-  if not Utilities.defined_val?(push_attributes)
-    puts "pushing to master"
-    Git.push_origin GitGodConstants::MASTER
-  else
-    puts "pushing to #{push_attributes}"
-    Git.push_origin push_attributes
-  end
-end
-
-def script(args, flag)
-
-  if args.length == 1
-    Errors.show_at_least_args_error(flag, 1, 0)
-  end
-
-  # write the runnable script with the arguments directly to file
-  FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::RUN_SCRIPT}=#{args[1..-1].join(" ")}")
-end
 
 # executes script from root directory
-def execute_script(script)
-  Dir.chdir Git.get_top_level.strip do
-    system script
-  end
-end
-
-def push_atts(args)
-  if args.length == 1
-    Errors.show_push_atts_no_atts_error
-  end
-
-  args[1..-1].each do |value|
-    value_spl = value.split("=")
-    if value_spl.length == 1 then Errors.show_push_atts_no_atts_error end
-    case value_spl[0]
-      when GitGodFlags::CONFIG_ORIGIN
-        write_push_atts value_spl[1]
-      else
-        Errors.show_unsupported_command(value_spl[0])
+  def execute_script(script)
+    Dir.chdir Git.get_top_level.strip do
+      system script
     end
   end
-end
 
-def write_push_atts(val)
-  FileUtilities.write_to_file_or_overwrite(GitGodConstants::PUSH_ORIGIN,
-                                           "#{GitGodConstants::PUSH_ORIGIN}=#{val}")
-end
+  def push_atts(args)
+    if args.length == 1
+      Errors.show_push_atts_no_atts_error
+    end
 
-def pull(args, flag)
-  if args.length > 2 then Errors.show_too_many_args_error(flag, 1, args.length - 1) end
-
-  values, _, _ = Utilities.get_values
-
-  if args.length == 1
-    # grab pull origin from configuration
-    pull_origin = values[GitGodConstants::PULL_ORIGIN]
-  else
-    # length must be two, therefore use the argument given as origin
-    pull_origin = args[1]
-  end
-
-  unless Utilities.defined_val?(pull_origin)
-    # if not defined in configuration file and not given in argument to flag
-    # then choose master by default
-    pull_origin = GitGodConstants::MASTER
-  end
-
-  puts "pulling from #{pull_origin}"
-  Git.pull_origin pull_origin
-end
-
-def pull_atts(args)
-  if args.length == 1
-    Errors.show_pull_atts_no_atts_error
-  end
-
-  args[1..-1].each do |value|
-    value_spl = value.split("=")
-    if value_spl.length == 1 then Errors.show_pull_atts_no_atts_error end
-    case value_spl[0]
-      when GitGodFlags::CONFIG_ORIGIN
-        write_pull_atts value_spl[1]
-      else
-        Errors.show_unsupported_command(value_spl[0])
+    args[1..-1].each do |value|
+      value_spl = value.split("=")
+      if value_spl.length == 1
+        Errors.show_push_atts_no_atts_error
+      end
+      case value_spl[0]
+        when GitGodFlags::CONFIG_ORIGIN
+          write_push_atts value_spl[1]
+        else
+          Errors.show_unsupported_command(value_spl[0])
+      end
     end
   end
-end
 
-def write_pull_atts(val)
-  FileUtilities.write_to_file_or_overwrite(GitGodConstants::PULL_ORIGIN,
-                                           "#{GitGodConstants::PULL_ORIGIN}=#{val}")
-end
-
-def issue(args, index)
-  unless Utilities.correct_issue_arg_length(args)
-    Errors.show_no_name_or_alias_error
+  def write_push_atts(val)
+    FileUtilities.write_to_file_or_overwrite(GitGodConstants::PUSH_ORIGIN,
+                                             "#{GitGodConstants::PUSH_ORIGIN}=#{val}")
   end
-  # if length is one, then we want to commit without issue
-  if args.length == 1
-    FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE)
-    exit(0)
-  end
-  name = ""
-  alias_for_name = nil
 
-  args[index + 1..-1].each do |arg|
-    arg_spl = arg.split("=")
-    case arg_spl[0]
-      when GitGodFlags::ISSUE_NAME_LONG, GitGodFlags::ISSUE_NAME
-        name = arg_spl[1]
-      when GitGodFlags::ISSUE_ALIAS_LONG, GitGodFlags::ISSUE_ALIAS
-        alias_for_name = arg_spl[1]
-      else
-        values, _, _ = Utilities.get_values
-        if arg_spl[0][1..-1] == values[GitGodConstants::CURRENT_ISSUE]
-          exit(0)
+  def pull(args, flag)
+    if args.length > 2 then
+      Errors.show_too_many_args_error(flag, 1, args.length - 1)
+    end
+
+    values, _, _ = Utilities.get_values
+
+    if args.length == 1
+      # grab pull origin from configuration
+      pull_origin = values[GitGodConstants::PULL_ORIGIN]
+    else
+      # length must be two, therefore use the argument given as origin
+      pull_origin = args[1]
+    end
+
+    unless Utilities.defined_val?(pull_origin)
+      # if not defined in configuration file and not given in argument to flag
+      # then choose master by default
+      pull_origin = GitGodConstants::MASTER
+    end
+
+    puts "pulling from #{pull_origin}"
+    Git.pull_origin pull_origin
+  end
+
+  def pull_atts(args)
+    if args.length == 1
+      Errors.show_pull_atts_no_atts_error
+    end
+
+    args[1..-1].each do |value|
+      value_spl = value.split("=")
+      if value_spl.length == 1 then
+        Errors.show_pull_atts_no_atts_error
+      end
+      case value_spl[0]
+        when GitGodFlags::CONFIG_ORIGIN
+          write_pull_atts value_spl[1]
+        else
+          Errors.show_unsupported_command(value_spl[0])
+      end
+    end
+  end
+
+  def write_pull_atts(val)
+    FileUtilities.write_to_file_or_overwrite(GitGodConstants::PULL_ORIGIN,
+                                             "#{GitGodConstants::PULL_ORIGIN}=#{val}")
+  end
+
+  def issue(args, index)
+    unless Utilities.correct_issue_arg_length(args)
+      Errors.show_no_name_or_alias_error
+    end
+    # if length is one, then we want to commit without issue
+    if args.length == 1
+      FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE)
+      exit(0)
+    end
+    name = ""
+    alias_for_name = nil
+
+    args[index + 1..-1].each do |arg|
+      arg_spl = arg.split("=")
+      case arg_spl[0]
+        when GitGodFlags::ISSUE_NAME_LONG, GitGodFlags::ISSUE_NAME
+          name = arg_spl[1]
+        when GitGodFlags::ISSUE_ALIAS_LONG, GitGodFlags::ISSUE_ALIAS
+          alias_for_name = arg_spl[1]
+        else
+          values, _, _ = Utilities.get_values
+          if arg_spl[0][1..-1] == values[GitGodConstants::CURRENT_ISSUE]
+            exit(0)
+          end
+          # it must be an alias or name
+          name = Utilities.get_name_from_alias(arg_spl[0][1..-1].strip)
+          if name == nil then
+            Errors.show_error_issue_not_exist(arg_spl[0][1..-1])
+          end
+          FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                                   "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
+          puts "Current issue: #{name}"
+          exit(0) # job is done, no need to add any issues
+      end
+    end
+
+    if name == nil then
+      Errors.show_no_name_for_issue_error
+    end
+
+    # writeToFile leaves config_file closed
+    if alias_for_name == nil
+      FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                               "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
+      FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
+    else
+      FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
+                                               "#{GitGodConstants::CURRENT_ISSUE}=#{name}=#{alias_for_name}")
+      FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::ISSUE}=#{name}=#{alias_for_name}")
+    end
+
+  end
+
+
+  def new_branch(args, flag)
+    Utilities.only_allow_one_arg args, flag
+    branch_name = args[1]
+    puts "creating new branch: #{branch_name}"
+    Git.new_branch branch_name
+  end
+
+  def checkout_branch(args, flag)
+    Utilities.only_allow_one_arg args, flag
+    branch_name = args[1]
+    puts "checkout to branch #{branch_name}"
+    Git.checkout branch_name
+    # set default push configuration to be the given branch
+    write_push_atts branch_name
+    # set default pull configuration to be the given branch
+    write_pull_atts branch_name
+  end
+
+  def clone(args, flag)
+    Utilities.only_allow_one_arg args, flag
+    repo = args[1]
+    puts "cloning #{repo}"
+    Git.clone repo
+  end
+
+  def delete_branch(args, flag)
+    Utilities.only_allow_one_arg args, flag
+    branch = args[1]
+    puts "deleting #{branch}"
+    Git.delete_branch branch
+  end
+
+  def merge(args, flag)
+    Utilities.only_allow_one_arg args, flag
+    branch = args[1]
+    current_branch = Git.get_current_branch
+    puts "merging #{branch} to #{current_branch}"
+    Git.merge branch
+  end
+
+  def protected_commit_push(args, flag)
+    unless args.length >= 2
+      Errors.show_at_least_args_error(flag, 2, args.length)
+    end
+    current_branch = Git.get_current_branch.strip
+    target_branch = args[1]
+    puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
+    Git.pull_origin target_branch
+    should_commit = true
+    commit(args[2..-1], flag, should_commit)
+    args_for_push = [flag, current_branch]
+    push(args_for_push, flag, false, true)
+  end
+
+  def long_commit(args, flag)
+    if args.length != 1 then
+      Errors.show_too_many_args_error(flag, 0, args.length - 1)
+    end
+
+    files = Git.get_latest_changed_files
+    return if files.empty?
+    begin
+      message = ""
+      puts "--Long commit mode--"
+      puts ""
+      puts "Files changed: "
+      puts files
+      puts ""
+      puts "Enter the commit message associated with each file:"
+      files.each do |file_name|
+        print file_name + ": "
+        msg_file = STDIN.gets.chomp
+        # if the message is empty then dont add it
+        unless msg_file.empty?
+          message += file_name + ": "
+          message += msg_file + "\n"
         end
-        # it must be an alias or name
-        name = Utilities.get_name_from_alias(arg_spl[0][1..-1].strip)
-        if name == nil then Errors.show_error_issue_not_exist(arg_spl[0][1..-1]) end
-        FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
-                                                 "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
-        puts "Current issue: #{name}"
-        exit(0) # job is done, no need to add any issues
-    end
-  end
-
-  if name == nil then Errors.show_no_name_for_issue_error end
-
-  # writeToFile leaves config_file closed
-  if alias_for_name == nil
-    FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
-                                             "#{GitGodConstants::CURRENT_ISSUE}=#{name}")
-    FileUtilities.write_to_file(CONFIG_FILE, "#{ISSUE}=#{name}")
-  else
-    FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
-                                             "#{GitGodConstants::CURRENT_ISSUE}=#{name}=#{alias_for_name}")
-    FileUtilities.write_to_file(CONFIG_FILE, "#{GitGodConstants::ISSUE}=#{name}=#{alias_for_name}")
-  end
-
-end
-
-
-def new_branch(args, flag)
-  Utilities.only_allow_one_arg args, flag
-  branch_name = args[1]
-  puts "creating new branch: #{branch_name}"
-  Git.new_branch branch_name
-end
-
-def checkout_branch(args, flag)
-  Utilities.only_allow_one_arg args, flag
-  branch_name = args[1]
-  puts "checkout to branch #{branch_name}"
-  Git.checkout branch_name
-  # set default push configuration to be the given branch
-  write_push_atts branch_name
-  # set default pull configuration to be the given branch
-  write_pull_atts branch_name
-end
-
-def clone(args, flag)
-  Utilities.only_allow_one_arg args, flag
-  repo = args[1]
-  puts "cloning #{repo}"
-  Git.clone repo
-end
-
-def delete_branch(args, flag)
-  Utilities.only_allow_one_arg args, flag
-  branch = args[1]
-  puts "deleting #{branch}"
-  Git.delete_branch branch
-end
-
-def merge(args, flag)
-  Utilities.only_allow_one_arg args, flag
-  branch = args[1]
-  current_branch = Git.get_current_branch
-  puts "merging #{branch} to #{current_branch}"
-  Git.merge branch
-end
-
-def protected_commit_push(args, flag)
-  unless args.length >= 2
-    Errors.show_at_least_args_error(flag, 2, args.length)
-  end
-  current_branch = Git.get_current_branch.strip
-  target_branch = args[1]
-  puts "updating current branch: #{current_branch}, pulling from #{target_branch}"
-  Git.pull_origin target_branch
-  should_commit = true
-  commit(args[2..-1], flag, should_commit)
-  args_for_push = [flag, current_branch]
-  push(args_for_push, flag, false, true)
-end
-
-def long_commit(args, flag)
-  if args.length != 1 then Errors.show_too_many_args_error(flag, 0, args.length - 1) end
-
-  files = Git.get_latest_changed_files
-  return if files.empty?
-  begin
-    message = ""
-    puts "--Long commit mode--"
-    puts ""
-    puts "Files changed: "
-    puts files
-    puts ""
-    puts "Enter the commit message associated with each file:"
-    files.each do |file_name|
-      print file_name + ": "
-      msg_file = STDIN.gets.chomp
-      # if the message is empty then dont add it
-      unless msg_file.empty?
-        message += file_name + ": "
-        message += msg_file + "\n"
       end
-    end
-    print "Additional flags: "
-    flags_for_commit = STDIN.gets.chomp
-    flags_for_commit ||= ""
-    values,  _, _ = Utilities.get_values
-    message = generate_msg_for_long_commit values, message, flags_for_commit
-    # if message is empty then do not commit it
-    if message.strip.length == 0
-      Errors.show_empty_commit_error
-    end
-    Utilities.add_and_commit values, message
-  rescue Interrupt
-    puts ""
-    puts "Commit was aborted."
-  end
-end
-
-
-# inspect_custom looks in the custom directory and gathers all ruby files.
-# It then instantiates them, and for each class instantiated, if that class
-# is a command then it executes if the passed flag matches the commands flag.
-# This is only executed if the built-in commands do not match the flag supplied.
-def inspect_custom(args)
-  file_join = File.join(File.expand_path("..", __FILE__), "/custom/*.rb")
-  custom_files = Dir.glob(file_join)
-  before = ObjectSpace.each_object(Class).to_a
-  # Require all files
-  custom_files.each {|file| require file }
-  # Find all the classes now
-  after = ObjectSpace.each_object(Class).to_a
-  # Map on the difference and instantiate
-  instantiations = (after - before)
-  instantiations = instantiations.map {|klass| klass.new }
-  has_executed = false
-
-  instantiations.each do |instance|
-    # for every instance, if it is a subclass of BaseCommand check flag
-    # if flag coincides, then call execute_command on it.
-    if instance.class <= BaseCommand
-      if instance.flag == args[0]
-        instance.execute_command(args)
-        has_executed = true
+      print "Additional flags: "
+      flags_for_commit = STDIN.gets.chomp
+      flags_for_commit ||= ""
+      values, _, _ = Utilities.get_values
+      message = generate_msg_for_long_commit values, message, flags_for_commit
+      # if message is empty then do not commit it
+      if message.strip.length == 0
+        Errors.show_empty_commit_error
       end
+      Utilities.add_and_commit values, message
+    rescue Interrupt
+      puts ""
+      puts "Commit was aborted."
     end
   end
-
-  # if nothing has been executed then it is not a valid command.
-  unless has_executed then Errors.show_unsupported_command args[0] end
-end
 
 # cloning is the only operation currently supported that is executed externally, out of a git repository
-Utilities.exec_if_clone_command_and_exit ARGV, GitGodFlags::CLONE
+  Utilities.exec_if_clone_command_and_exit ARGV, GitGodFlags::CLONE
 # check if it is a git repository
-Utilities.check_if_git_repo
+  Utilities.check_if_git_repo
 
-top_level = Git.get_top_level
-CONFIG_FILE = File.join(top_level.strip, GitGodConstants::CONFIG_FILE_EXTENSION)
+  top_level = Git.get_top_level
+  CONFIG_FILE = File.join(top_level.strip, GitGodConstants::CONFIG_FILE_EXTENSION)
 
 # create configuration file if it does not exist
-unless File.exist?(CONFIG_FILE)
-  config_file = File.open(CONFIG_FILE, "w+")
-  config_file.close
-end
+  unless File.exist?(CONFIG_FILE)
+    config_file = File.open(CONFIG_FILE, "w+")
+    config_file.close
+  end
 
-arg = ARGV[0]
-index = 0
-case arg
-  when GitGodFlags::ADD_ALL
-    Utilities.always_add_all
-  when GitGodFlags::LOCAL_BRANCHES
-    Git.get_local_branches
-  when GitGodFlags::ALL_BRANCHES
-    Git.get_all_branches
-  when GitGodFlags::COMMIT
-    commit(ARGV, GitGodFlags::COMMIT, true)
-  when GitGodFlags::CURRENT_BRANCH
-    # show current branch
-    puts Git.get_current_branch
-  when GitGodFlags::CHECKOUT
-    checkout_branch(ARGV, GitGodFlags::CHECKOUT)
-  when GitGodFlags::HELP
-    Help.parse_commands ARGV
-  when GitGodFlags::COMMIT_AND_PUSH
-    commit(ARGV, GitGodFlags::COMMIT_AND_PUSH, true)
-    # do not expect more arguments
-    push(ARGV, GitGodFlags::COMMIT_AND_PUSH, true, false)
-  when GitGodFlags::DELETE_BRANCH
-    delete_branch(ARGV, GitGodFlags::DELETE_BRANCH)
-  when GitGodFlags::DIFF
-    Git.get_diff
-  when GitGodFlags::FETCH_ALL
-    Git.fetch_all
-  when GitGodFlags::GIT_STATUS
-    Git.get_status
-  when GitGodFlags::ISSUE
-    issue(ARGV, index)
-  when GitGodFlags::LOG
-    handle_log(ARGV, index)
-  when GitGodFlags::LONG_COMMIT
-    long_commit(ARGV, GitGodFlags::LONG_COMMIT)
-  when GitGodFlags::MERGE
-    merge(ARGV, GitGodFlags::MERGE)
-  when GitGodFlags::NEW_BRANCH
-    new_branch(ARGV, GitGodFlags::NEW_BRANCH)
-  when GitGodFlags::OPEN_CONFIG_FILE
-    system "vim #{CONFIG_FILE}"
-  when GitGodFlags::PUSH
-    # load from configuration unless it is specified
-    push(ARGV, GitGodFlags::PUSH, false, true)
-  when GitGodFlags::PUSH_CONFIG
-    push_atts(ARGV)
-  when GitGodFlags::PULL
-    pull(ARGV,  GitGodFlags::PULL)
-  when GitGodFlags::PULL_CONFIG
-    pull_atts(ARGV)
-  when GitGodFlags::PROTECTED_COMMIT_PUSH
-    protected_commit_push(ARGV, GitGodFlags::PROTECTED_COMMIT_PUSH)
-  when GitGodFlags::REMOVE_CONFIG
-    remove_config(ARGV, index)
-  when GitGodFlags::ROOT
-    puts Git.get_top_level
-  when GitGodFlags::STATUS_LONG, GitGodFlags::STATUS
-    show_status
-  when GitGodFlags::SHOW_COMMIT
-    # do not commit, only show message
-    commit(ARGV, GitGodFlags::COMMIT, false)
-  when GitGodFlags::SCRIPT_LONG, GitGodFlags::SCRIPT
-    script(ARGV, "#{GitGodFlags::SCRIPT_LONG}/#{GitGodFlags::SCRIPT}")
-  when GitGodFlags::URL
-    Git.get_url
-  else
-    inspect_custom(ARGV)
-end
+  arg = ARGV[0]
+  index = 0
+  case arg
+    when GitGodFlags::ADD_ALL
+      Utilities.always_add_all
+    when GitGodFlags::LOCAL_BRANCHES
+      Git.get_local_branches
+    when GitGodFlags::ALL_BRANCHES
+      Git.get_all_branches
+    when GitGodFlags::COMMIT
+      commit(ARGV, GitGodFlags::COMMIT, true)
+    when GitGodFlags::CURRENT_BRANCH
+      # show current branch
+      puts Git.get_current_branch
+    when GitGodFlags::CHECKOUT
+      checkout_branch(ARGV, GitGodFlags::CHECKOUT)
+    when GitGodFlags::HELP
+      Help.parse_commands ARGV
+    when GitGodFlags::COMMIT_AND_PUSH
+      commit(ARGV, GitGodFlags::COMMIT_AND_PUSH, true)
+      # do not expect more arguments
+      push(ARGV, GitGodFlags::COMMIT_AND_PUSH, true, false)
+    when GitGodFlags::DELETE_BRANCH
+      delete_branch(ARGV, GitGodFlags::DELETE_BRANCH)
+    when GitGodFlags::DIFF
+      Git.get_diff
+    when GitGodFlags::FETCH_ALL
+      Git.fetch_all
+    when GitGodFlags::GIT_STATUS
+      Git.get_status
+    when GitGodFlags::ISSUE
+      issue(ARGV, index)
+    when GitGodFlags::LOG
+      handle_log(ARGV, index)
+    when GitGodFlags::LONG_COMMIT
+      long_commit(ARGV, GitGodFlags::LONG_COMMIT)
+    when GitGodFlags::MERGE
+      merge(ARGV, GitGodFlags::MERGE)
+    when GitGodFlags::NEW_BRANCH
+      new_branch(ARGV, GitGodFlags::NEW_BRANCH)
+    when GitGodFlags::OPEN_CONFIG_FILE
+      system "vim #{CONFIG_FILE}"
+    when GitGodFlags::PUSH
+      # load from configuration unless it is specified
+      push(ARGV, GitGodFlags::PUSH, false, true)
+    when GitGodFlags::PUSH_CONFIG
+      push_atts(ARGV)
+    when GitGodFlags::PULL
+      pull(ARGV, GitGodFlags::PULL)
+    when GitGodFlags::PULL_CONFIG
+      pull_atts(ARGV)
+    when GitGodFlags::PROTECTED_COMMIT_PUSH
+      protected_commit_push(ARGV, GitGodFlags::PROTECTED_COMMIT_PUSH)
+    when GitGodFlags::REMOVE_CONFIG
+      remove_config(ARGV, index)
+    when GitGodFlags::ROOT
+      puts Git.get_top_level
+    when GitGodFlags::STATUS_LONG, GitGodFlags::STATUS
+      show_status
+    when GitGodFlags::SHOW_COMMIT
+      # do not commit, only show message
+      commit(ARGV, GitGodFlags::COMMIT, false)
+    when GitGodFlags::SCRIPT_LONG, GitGodFlags::SCRIPT
+      script(ARGV, "#{GitGodFlags::SCRIPT_LONG}/#{GitGodFlags::SCRIPT}")
+    when GitGodFlags::URL
+      Git.get_url
+    else
+      Utilities.inspect_custom(ARGV)
+  end

@@ -4,6 +4,7 @@ module Utilities
   require_relative 'errors'
   require_relative 'constants'
   require_relative 'git'
+  require_relative 'base_command'
 
   def self.get_key_from_flag(flag)
     unless configurable?(flag)
@@ -22,6 +23,48 @@ module Utilities
         GitGodConstants::ISSUE
       when GitGodFlags::SCRIPT, GitGodFlags::SCRIPT_LONG
         GitGodConstants::RUN_SCRIPT
+    end
+  end
+
+  # inspect_custom looks in the custom directory and gathers all ruby files.
+  # It then instantiates them, and for each class instantiated, if that class
+  # is a command then it executes if the passed flag matches the commands flag.
+  # This is only executed if the built-in commands do not match the flag supplied.
+  def self.inspect_custom(args, is_help = false)
+    file_join = File.join(File.expand_path("..", __FILE__), "../custom/*.rb")
+    custom_files = Dir.glob(file_join)
+    before = ObjectSpace.each_object(Class).to_a
+    # Require all files
+    custom_files.each {|file| require file}
+    # Find all the classes now
+    after = ObjectSpace.each_object(Class).to_a
+    # Map on the difference and instantiate
+    instantiations = (after - before)
+    instantiations = instantiations.map {|klass| klass.new}
+    has_executed = false
+
+    instantiations.each do |instance|
+      # for every instance, if it is a subclass of BaseCommand check flag
+      # if flag coincides, then call execute_command on it.
+      if instance.class <= BaseCommand
+        #  if is help then args will supply directly the flag
+        if is_help and instance.flag == args
+          instance.help_command
+          has_executed = true
+        end
+
+        # otherwise
+        if not is_help and instance.flag == args[0]
+          instance.execute_command args
+          has_executed = true
+        end
+      end
+    end
+
+    # if nothing has been executed then it is not a valid command.
+    unless has_executed
+      value = is_help ? args : args[0]
+      Errors.show_unsupported_command value
     end
   end
 

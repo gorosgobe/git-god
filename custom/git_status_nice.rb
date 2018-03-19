@@ -10,4 +10,8 @@ class GitStatusNice < BaseCommand
     system "git status -sb"
   end
 
+  def help
+    puts "Alternative formatting for git status. With thanks to @tiimgreen."
+  end
+
 end

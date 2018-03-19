@@ -36,4 +36,9 @@ class GitIgnoreCommand < BaseCommand
     end
   end
 
+  def help
+    puts "Adds the supplied string to the .gitignore file of the repository. If no gitignore file exists" +
+             " then a .gitignore file will be created automatically. "
+  end
+
 end

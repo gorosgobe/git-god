@@ -26,4 +26,14 @@ class BaseCommand
     fail NotImplementedError
   end
 
+  def help_command
+    puts "gg #{@flag} - Number of arguments: #{@range}."
+    help
+  end
+
+  # User overridable
+  def help
+    puts "No help available for command #{@flag}."
+  end
+
 end

@@ -144,7 +144,7 @@ module Help
       when GitGodFlags::URL
         gg_url
       else
-        Errors.show_no_help_entry arg
+        Utilities.inspect_custom arg, is_help = true
       end
   end
 
