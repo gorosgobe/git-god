@@ -25,6 +25,7 @@ class GitIgnoreCommand < BaseCommand
       unless File.exist?(GIT_IGNORE)
         # if it does not exist, create the file in the root directory and write the file name
         File.open(GIT_IGNORE, "w+") do |file|
+          file.puts("")
           file.puts(file_name)
         end
         return
