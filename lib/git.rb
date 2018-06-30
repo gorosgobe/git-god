@@ -34,6 +34,10 @@ module Git
     system "git diff"
   end
 
+  def self.init
+    system "git init"
+  end
+
   def self.get_current_branch
     `git rev-parse --abbrev-ref HEAD`
   end

@@ -124,7 +124,7 @@
         when GitGodConstants::LOG_PRIORITY
           puts "logged: #{v[0]}"
         when GitGodConstants::ADD_PRIORITY
-          if v[0].length != 0 then
+          if v[0].length != 0
             puts "add: " + GitGodConstants::ALL
           end
         when GitGodConstants::PUSH_ORIGIN_PRIORITY

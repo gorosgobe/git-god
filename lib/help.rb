@@ -231,6 +231,7 @@ module Help
     puts "Sets the log to be the supplied arguments. An extra argument can be " +
              "added to specify the delimiter to use for these logs. The delimiter must be " +
              "one or two characters long."
+    puts "Note that -del=<delimiter> must be passed in before any logs"
   end
 
   def self.gg_issue
