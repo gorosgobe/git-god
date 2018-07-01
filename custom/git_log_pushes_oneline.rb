@@ -1,14 +1,14 @@
-class GitLogOneLine < BaseCommand
+class GitLogPushesOneLine < BaseCommand
 
   require_relative '../lib/base_command'
   require_relative '../lib/git'
 
   def initialize
-    super("lgc", Range.new(0))
+    super("lgp", Range.new(0))
   end
 
   def execute(_args)
-    Git.log_commit_oneline
+    Git.log_pushed
   end
 
   def help

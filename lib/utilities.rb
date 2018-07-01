@@ -204,7 +204,16 @@ module Utilities
   end
 
   def self.get_list_commits
-    out = `git log --pretty=oneline`
+    out = `git log --pretty=oneline --branches`
+    result = Array.new
+    out.split("\n").each do |line|
+      result << line.partition(" ")[2]
+    end
+    result
+  end
+
+  def self.get_list_all_pushes
+    out = `git log --pretty=oneline --branches --remotes`
     result = Array.new
     out.split("\n").each do |line|
       result << line.partition(" ")[2]

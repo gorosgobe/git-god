@@ -93,8 +93,12 @@ module Git
     system "git add -A"
   end
 
-  def self.log_oneline
+  def self.log_commit_oneline
     system "git log --pretty=oneline"
+  end
+
+  def self.log_pushed
+    system "git log --pretty=oneline --branches --remotes"
   end
 
 end
