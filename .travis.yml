@@ -1,2 +1,3 @@
 language: ruby
+install: export PATH=$PATH:$(pwd)
 script: ./runtests
