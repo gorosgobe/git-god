@@ -16,10 +16,10 @@ If you wish to feel even more like a god, add the following line too:
 alias g='gg'
 ```
 
-# Extensibility - adding your own commands.
+# Extensibility - adding your own commands, super easy!.
 git-god is a tool that can be extended really easily. In order to add your own commands, you need to create a subclass of the BaseCommand class (in lib/), defining the execute() method. Then, put your file in the custom/ directory, and git-god will load it automatically each time it runs. As simple as that.
 
-For an example of how to implement such commands see the "gg ig <file-name>" command in the custom/ directory, which allows the user to add files to their .gitignore file. 
+For an example of how to implement such commands see the "gg ig <file-name>" command in the custom/ directory, which allows the user to add files to their .gitignore file. Other examples have also been added under the custom/ directory.
 
 # Features
 The following are the features currently supported by git-god.
@@ -178,3 +178,10 @@ Adds a file to the .gitignore file. If the .gitignore file does not exist, creat
 ```
 gg ig <file-name>
 ```
+#... and more!
+
+This is not a comprehensive list of commands. If you wanna know more about all the capabilities of git-god, clone it and run
+```
+gg h
+```
+which will print out all commands with their respective explanation supported by your version of git-god.
