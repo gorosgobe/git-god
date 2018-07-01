@@ -6,24 +6,12 @@ module Utilities
   require_relative 'git'
   require_relative 'base_command'
 
+
   def self.get_key_from_flag(flag)
     unless configurable?(flag)
       Errors.show_non_removable_config flag
     end
-    case flag
-      when GitGodFlags::LOG
-        GitGodConstants::LOGGED
-      when GitGodFlags::PUSH_CONFIG
-        GitGodConstants::PUSH_ORIGIN
-      when GitGodFlags::PULL_CONFIG
-        GitGodConstants::PULL_ORIGIN
-      when GitGodFlags::ADD_ALL
-        GitGodConstants::ADD
-      when GitGodFlags::ISSUE
-        GitGodConstants::ISSUE
-      when GitGodFlags::SCRIPT, GitGodFlags::SCRIPT_LONG
-        GitGodConstants::RUN_SCRIPT
-    end
+    GitGodFlags::FLAGS_TO_CONSTANTS[flag]
   end
 
   def self.get_custom_instantiations

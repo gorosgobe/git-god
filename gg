@@ -66,7 +66,7 @@
     should_delete_current_issue = false
     if args.length == 1
       # flag is only -r, delete whole configuration
-      if File.exist?(CONFIG_FILE) then
+      if File.exist?(CONFIG_FILE) 
         File.delete(CONFIG_FILE)
       end
     else
@@ -74,7 +74,7 @@
       args[index + 1..-1].each do |flag|
         key = Utilities.get_key_from_flag(flag)
         # would delete all issues in case key is issue
-        if key == GitGodConstants::ISSUE then
+        if key == GitGodConstants::ISSUE
           should_delete_current_issue = true
         end
         file = FileUtilities.delete_line_with_key(key)
@@ -83,7 +83,7 @@
     end
 
     # if all issues are deleted then also delete the current issue symbol
-    if should_delete_current_issue then
+    if should_delete_current_issue
       FileUtilities.delete_line_with_key(GitGodConstants::CURRENT_ISSUE)
     end
     config_file.close
@@ -137,7 +137,7 @@
     end
 
     # if there is no current issue because it has been restored or never assigned
-    if info[GitGodConstants::CURRENT_PRIORITY] == nil then
+    if info[GitGodConstants::CURRENT_PRIORITY] == nil
       puts "no current issues"
     end
 
@@ -189,7 +189,7 @@
     message += " " + args[1].to_s
     if args.length > 2
       # delete added whitespace above for correct display of first flag
-      if args[1].to_s.length == 0 then
+      if args[1].to_s.length == 0
         message = message[0..-2]
       end
       # commit message might have additional flags
@@ -373,7 +373,7 @@
   end
 
   def pull(args, flag)
-    if args.length > 2 then
+    if args.length > 2
       Errors.show_too_many_args_error(flag, 1, args.length - 1)
     end
 
@@ -404,7 +404,7 @@
 
     args[1..-1].each do |value|
       value_spl = value.split("=")
-      if value_spl.length == 1 then
+      if value_spl.length == 1
         Errors.show_pull_atts_no_atts_error
       end
       case value_spl[0]
@@ -447,7 +447,7 @@
           end
           # it must be an alias or name
           name = Utilities.get_name_from_alias(arg_spl[0][1..-1].strip)
-          if name == nil then
+          if name == nil
             Errors.show_error_issue_not_exist(arg_spl[0][1..-1])
           end
           FileUtilities.write_to_file_or_overwrite(GitGodConstants::CURRENT_ISSUE,
@@ -457,7 +457,7 @@
       end
     end
 
-    if name == nil then
+    if name == nil
       Errors.show_no_name_for_issue_error
     end
 
@@ -530,7 +530,7 @@
   end
 
   def long_commit(args, flag)
-    if args.length != 1 then
+    if args.length != 1
       Errors.show_too_many_args_error(flag, 0, args.length - 1)
     end
 

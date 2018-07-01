@@ -1,5 +1,7 @@
 module GitGodFlags
 
+  require_relative 'constants'
+
   ADD_ALL = "a"
   ISSUE_ALIAS = "-a"
   ISSUE_ALIAS_LONG = "-alias"
@@ -51,5 +53,15 @@ module GitGodFlags
       SCRIPT,
       SCRIPT_LONG
   ]
+
+  FLAGS_TO_CONSTANTS = {
+      GitGodFlags::LOG         => GitGodConstants::LOGGED,
+      GitGodFlags::PUSH_CONFIG => GitGodConstants::PUSH_ORIGIN,
+      GitGodFlags::PULL_CONFIG => GitGodConstants::PULL_ORIGIN,
+      GitGodFlags::ADD_ALL     => GitGodConstants::ADD,
+      GitGodFlags::ISSUE       => GitGodConstants::ISSUE,
+      GitGodFlags::SCRIPT      => GitGodConstants::RUN_SCRIPT,
+      GitGodFlags::SCRIPT_LONG => GitGodConstants::RUN_SCRIPT,
+  }
 
 end
