@@ -229,7 +229,7 @@ module Utilities
   end
 
   def self.get_list_unpushed
-    out = `git log --pretty=oneline --branches --remotes`
+    out = `git log --pretty=oneline --branches --not --remotes`
     result = Array.new
     out.split("\n").each do |line|
       result << line.partition(" ")[2]
