@@ -12,7 +12,7 @@ class GitLogOneLine < BaseCommand
   end
 
   def help
-    puts "Outputs your commits in the form <hash> <commit-message>, with one per line, ordered by most recent. Good for parsing commit names."
+    puts "Outputs your commits in the form <hash> <commit-message>, with one per line, ordered by most recent. Suitable for parsing."
   end
 
 end

@@ -212,7 +212,7 @@ module Utilities
     result
   end
 
-  def self.get_list_all_pushes
+  def self.get_list_unpushed
     out = `git log --pretty=oneline --branches --remotes`
     result = Array.new
     out.split("\n").each do |line|

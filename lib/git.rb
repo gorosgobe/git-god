@@ -97,8 +97,8 @@ module Git
     system "git log --pretty=oneline"
   end
 
-  def self.log_pushed
-    system "git log --pretty=oneline --branches --remotes"
+  def self.log_unpushed
+    system "git log --pretty=oneline --branches --not --remotes"
   end
 
 end
