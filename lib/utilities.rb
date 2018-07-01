@@ -26,11 +26,7 @@ module Utilities
     end
   end
 
-  # inspect_custom looks in the custom directory and gathers all ruby files.
-  # It then instantiates them, and for each class instantiated, if that class
-  # is a command then it executes if the passed flag matches the commands flag.
-  # This is only executed if the built-in commands do not match the flag supplied.
-  def self.inspect_custom(args, is_help = false)
+  def self.get_custom_instantiations
     file_join = File.join(File.expand_path("..", __FILE__), "../custom/*.rb")
     custom_files = Dir.glob(file_join)
     before = ObjectSpace.each_object(Class).to_a
@@ -40,7 +36,16 @@ module Utilities
     after = ObjectSpace.each_object(Class).to_a
     # Map on the difference and instantiate
     instantiations = (after - before)
-    instantiations = instantiations.map {|klass| klass.new}
+    instantiations.map {|klass| klass.new}
+  end
+
+
+  # inspect_custom looks in the custom directory and gathers all ruby files.
+  # It then instantiates them, and for each class instantiated, if that class
+  # is a command then it executes if the passed flag matches the commands flag.
+  # This is only executed if the built-in commands do not match the flag supplied.
+  def self.inspect_custom(args, is_help = false)
+    instantiations = get_custom_instantiations
     has_executed = false
 
     instantiations.each do |instance|
@@ -65,6 +70,17 @@ module Utilities
     unless has_executed
       value = is_help ? args : args[0]
       Errors.show_unsupported_command value
+    end
+  end
+
+
+  def self.inspect_all_help
+    instantiations = get_custom_instantiations
+    instantiations.each do |instance|
+      if instance.class <= BaseCommand
+        puts instance.help_command
+        puts ""
+      end
     end
   end
 

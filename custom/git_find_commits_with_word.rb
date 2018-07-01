@@ -59,11 +59,11 @@ class GitFindCommitsWithWord < BaseCommand
   end
 
   def help
-    puts 'gg #{@flag} "<word(s)/regex to search for>" [p] [r]'
+    puts "gg #{@flag} \"<word(s)/regex to search for>\" [p] [r]"
     puts "Note that arguments p and r are optional and maybe passed in any order, as long as the word/regex to search for remains the first argument."
     puts ""
     puts "Finds all commits with the supplied word/regex. Useful to determine the first commit that introduced a given word. The commits are ordered in reverse: the first commit shown is the oldest one that introduced the supplied word. "
     puts ""
-    puts 'If "p" is added as another argument, gg #{@flag} will also show the patches done per commit. If "r" is added as another argument, gg #{@flag} will take in a regex to be used by the underlying git log command'
+    puts "If \"p\" is added as another argument, gg #{@flag} will also show the patches done per commit. If \"r\" is added as another argument, gg #{@flag} will take in a regex to be used by the underlying git log command"
   end
 end

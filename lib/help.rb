@@ -67,6 +67,7 @@ module Help
     puts ""
     gg_url
     puts ""
+    Utilities.inspect_all_help
   end
 
   def self.parse_commands(args)
