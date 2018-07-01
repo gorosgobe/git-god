@@ -203,5 +203,14 @@ module Utilities
     end
   end
 
+  def self.get_list_commits
+    out = `git log --pretty=oneline`
+    result = Array.new
+    out.split("\n").each do |line|
+      result << line.partition(" ")[2]
+    end
+    result
+  end
+
 
 end

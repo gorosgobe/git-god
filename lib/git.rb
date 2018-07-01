@@ -93,4 +93,8 @@ module Git
     system "git add -A"
   end
 
+  def self.log_oneline
+    system "git log --pretty=oneline"
+  end
+
 end
