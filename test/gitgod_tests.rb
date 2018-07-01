@@ -11,17 +11,14 @@ class GitGodTests < Test::Unit::TestCase
   end
 
   def setup
-    $stdout.puts "Running test..."
     system "mkdir #{TEST_DIRECTORY}"
     Dir.chdir("#{TEST_DIRECTORY}")
-    Git.init
+    run_no_output "git init"
   end
 
   def teardown
     Dir.chdir ".."
     system "rm -rf #{TEST_DIRECTORY}"
-    $stdout.puts "Test completed."
-    $stdout.puts ""
   end
 
   def test_setup_correctly
@@ -86,7 +83,6 @@ class GitGodTests < Test::Unit::TestCase
     run_no_output "echo 'hello' > test2.txt"
     run_no_output  "gg c 'Test commit number 2'"
     list = Utilities.get_list_commits
-    $stdout.puts list
     assert_equal 2, list.length
     assert_equal " Test commit number 2", list[0]
     assert_equal " Test commit", list[1]
