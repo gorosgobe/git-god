@@ -1,4 +1,4 @@
-# git-god
+# git-god [![Build Status](https://travis-ci.org/gorosgobe/git-god.svg?branch=master)](https://travis-ci.org/gorosgobe/git-god)
 
 A script that allows to save configurations for easier, more meaningful, faster and safer comitting and pushing. 
 
@@ -180,7 +180,7 @@ Adds a file to the .gitignore file. If the .gitignore file does not exist, creat
 ```
 gg ig <file-name>
 ```
-#... and more!
+# ... and more!
 
 This is not a comprehensive list of commands. If you wanna know more about all the capabilities of git-god, clone it and run
 ```
