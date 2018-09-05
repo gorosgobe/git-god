@@ -66,7 +66,7 @@
     should_delete_current_issue = false
     if args.length == 1
       # flag is only -r, delete whole configuration
-      if File.exist?(CONFIG_FILE) 
+      if File.exist?(CONFIG_FILE)
         File.delete(CONFIG_FILE)
       end
     else
@@ -584,6 +584,11 @@
   end
 
   arg = ARGV[0]
+  
+  if arg.nil?
+    Errors.no_args_supplied
+  end
+
   index = 0
   case arg
     when GitGodFlags::ADD_ALL

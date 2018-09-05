@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+git_god_path = File.expand_path File.dirname(__FILE__)
+
+if ENV["PATH"].include? git_god_path
+  puts "git-god is already installed."
+  exit 0
+end
+
+# not installed
+Dir.chdir(ENV["HOME"]) do
+  File.open(".bashrc", "a") do |file|
+    file.puts "export PATH=$PATH:#{git_god_path}"
+    print "Would you like to add an alias for git-god? (y/n): "
+    res = gets.chomp
+    if res == "y" or res == "Y"
+      print "What alias do you want for gg? (Suggested: g): "
+      alias_val = gets.chomp
+      file.puts "alias #{alias_val}='gg'"
+    end
+  end
+end
+
+puts "Install successful. Restart terminal to complete."

@@ -7,7 +7,9 @@ git-god allows to set suites of scripts running before every push i.e. preventin
 # Install
 Make sure you have Ruby installed. If you don't, follow the instructions go to https://www.ruby-lang.org/en/documentation/installation/.
 
-Add the following line to the bottom of your ~/.bashrc file:
+In order to install git-god, execute the "install" script in the repo.
+
+If you'd rather do it manually, add the following line to the bottom of your ~/.bashrc file:
 ```
 export PATH=$PATH:<path-to-repo>
 ```

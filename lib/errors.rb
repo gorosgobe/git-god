@@ -1,8 +1,13 @@
 module Errors
 
+  def self.no_args_supplied
+    puts "Error: no arguments have been supplied to git-god"
+    exit
+  end
+
   def self.show_no_log_included_error
     puts "Error: no logs have been included."
-    exit(128)
+    exit 128
   end
 
   def self.show_push_aborted
@@ -13,27 +18,27 @@ module Errors
   def self.show_non_removable_config(flag)
     puts "Error: configuration for #{flag} cannot be removed."
     puts "The flag #{flag} is non configurable or does not exist."
-    exit(128)
+    exit 128
   end
 
   def self.show_not_git_repo_error
     puts "Error: current directory is not a git repository."
-    exit(128)
+    exit 128
   end
 
   def self.show_too_many_args_error(flag, expected, len)
     puts "Error: #{flag} received too many arguments. Expected #{expected}, got #{len}."
-    exit(128)
+    exit 128
   end
 
   def self.show_not_enough_args_error(flag, expected, len)
     puts "Error: #{flag} did not receive enough arguments. Expected #{expected}, got #{len}."
-    exit(128)
+    exit 128
   end
 
   def self.show_at_least_args_error(flag, at_least_num, actual_num)
     puts "Error: #{flag} expects at least #{at_least_num} arguments, but got #{actual_num}"
-    exit(128  )
+    exit 128
   end
 
   def self.show_delimiter_empty_error
@@ -49,7 +54,7 @@ module Errors
   def self.to_add_delimiter_tut
     puts "To add a delimiter, add flag -del=\"<delimiter>\". Note the double quotes."
     puts "<delimiter> must be one or two characters."
-    exit(128)
+    exit 128
   end
 
   def self.show_flag_expect_message_error(flag, value)
@@ -59,7 +64,7 @@ module Errors
 
   def self.expected_commit(flag)
     puts "Expected: gg #{flag} \"<some message>\" [-cl <args>|-ct <args>]"
-    exit(128)
+    exit 128 
   end
 
   def self.show_script_not_in_root_error(script, should_exit)
@@ -86,7 +91,7 @@ module Errors
     puts "Expected: \"gg i -name=<issue-name>\" or \"gg i -name=<issue-name> -alias=<alias>\"."
     puts "Alternatively: \"gg i -n=<issue-name>\" or \"gg i -n=<issue-name> -a=<alias>\"."
     puts "To set the current issue, use \"gg i -<alias or name of issue>\"."
-    exit(128)
+    exit 128 
   end
 
   def self.show_no_help_entry(arg)
@@ -98,7 +103,7 @@ module Errors
     puts "Error: unexpected command \"#{arg}\" found."
     puts "To view a full list of all arguments to gg, run gg h [flags]."
     puts "If no argument is supplied, gg h will print the whole help manual."
-    exit(128)
+    exit 128
   end
 
   def self.show_invalid_size_commit(calling_flag)
@@ -114,13 +119,13 @@ module Errors
   def self.show_push_atts_no_atts_error
     puts "Error: trying to add a configuration for push but no attributes are found."
     puts "To add a configuration for push, use \"gg pc -o=<branch-name>\"."
-    exit(128)
+    exit 128 
   end
 
   def self.show_pull_atts_no_atts_error
     puts "Error: trying to add a configuration for pull but no attributes are found."
     puts "To add a configuration for pull, use \"gg pl -o=<branch-name>\"."
-    exit(128)
+    exit 128
   end
 
   def self.show_empty_commit_error
